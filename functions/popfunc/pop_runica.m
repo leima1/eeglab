@@ -381,13 +381,13 @@ else
         EEG = pop_mergeset(EEG, 1:length(EEG));
     else
         disp('Concatenating datasets...');
+        totalpnts = 0;
         EEG = ALLEEG(g.dataset(1));
         EEG.data = zeros(EEG.nbchan, totalpnts);
         
         cpnts = 1;
         % compute total data size
         % -----------------------
-        totalpnts = 0;
         for i = g.dataset
             totalpnts = totalpnts+ALLEEG(g.dataset(i)).pnts*ALLEEG(g.dataset(i)).trials;
         end
