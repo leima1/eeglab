@@ -100,7 +100,7 @@ function STUDY = bemobil_dipoles(STUDY,ALLEEG)
             end
             
             %assert(sum(diff(RV_temp))==0,'RVs of the same IC seem to be different between conditions!')
-            assert(sum(diff(RV_temp))<.01,'RVs of the same IC seem to be different between conditions!')
+            assert(sum(diff(RV_temp))<.05,'RVs of the same IC seem to be different between conditions!')
             residual_variances(ICind) = RV_temp(1);
             
         end

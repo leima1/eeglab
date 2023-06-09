@@ -350,7 +350,7 @@ elseif ~isempty(elec2)
         
         % autoscale
         % ---------
-        [ electransf transform ] = align_fiducials(electmp, elec2, g.alignfid);
+        [ electransf transform ] = align_fiducials(elec1, elec2, g.alignfid);
         if ~isempty(transform), dat.transform = [ transform(1:6)' ratio ratio ratio ]; end
         
     elseif ~isempty(g.warp)
@@ -634,13 +634,13 @@ function plotlabels(elec, elecshow, color, tag);
     
 % align fiducials
 % ---------------
-function [elec1, transf] = align_fiducials(elec1, elec2, fidnames1, fidnames2)
+function [elec1, transf] = align_fiducials(elec1, elec2, fidnames1)
 
     % rename fiducials
     % ----------------
-    ind1 = strmatch(fidnames1{1}, elec1.label, 'exact'); elec1.label{ind1} = fidnames2{1};
-    ind2 = strmatch(fidnames1{2}, elec1.label, 'exact'); elec1.label{ind2} = fidnames2{2};
-    ind3 = strmatch(fidnames1{3}, elec1.label, 'exact'); elec1.label{ind3} = fidnames2{3};
+    ind1 = strmatch(fidnames1{1}, elec1.label, 'exact'); fidnames2{1} = elec1.label{ind1};
+    ind2 = strmatch(fidnames1{2}, elec1.label, 'exact'); fidnames2{2} = elec1.label{ind2};
+    ind3 = strmatch(fidnames1{3}, elec1.label, 'exact'); fidnames2{3} = elec1.label{ind3};
     cfg          = [];
     cfg.elec     = elec1;
     cfg.template = elec2;

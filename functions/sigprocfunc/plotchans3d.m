@@ -82,7 +82,7 @@ end
 
 %zs =[3 7 15 26 36 46 56 64 69 71 72];
 
-figure
+%figure
 lim=1.05*max([X Y Z]);
 eps=lim/20;
 plot3(X,Y,Z,'ro')
