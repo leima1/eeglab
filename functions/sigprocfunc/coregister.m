@@ -321,7 +321,7 @@ end
 % -------------------------
 if ~isempty(chanlocs2)
     TMP   = eeg_emptyset;
-    [TMP.chanlocs tmp2 tmp3 ind1] = readlocs(chanlocs2);
+    TMP.chanlocs = readlocs(chanlocs2);
     TMP.chaninfo                  = g.chaninfo2;
     TMP.nbchan = length(TMP.chanlocs);
     cfg   = eeglab2fieldtrip(TMP, 'chanloc_withfid');
@@ -350,12 +350,12 @@ elseif ~isempty(elec2)
         
         % autoscale
         % ---------
-        [ electransf transform ] = align_fiducials(elec1, elec2, g.alignfid);
+        [ ~, transform ] = align_fiducials(elec1, elec2, g.alignfid);
         if ~isempty(transform), dat.transform = [ transform(1:6)' ratio ratio ratio ]; end
         
     elseif ~isempty(g.warp)
         if ischar(g.warp)
-            [clist1 clist2] = pop_chancoresp( elec1, elec2, 'autoselect', 'all', 'gui', 'off');
+            [clist1, clist2] = pop_chancoresp( elec1, elec2, 'autoselect', 'all', 'gui', 'off');
             % copy electrode names
             if isempty(clist1)
                 disp('Warning: cannot wrap electrodes (no common channel labels)');
@@ -634,13 +634,13 @@ function plotlabels(elec, elecshow, color, tag);
     
 % align fiducials
 % ---------------
-function [elec1, transf] = align_fiducials(elec1, elec2, fidnames1)
+function [elec1, transf] = align_fiducials(elec1, elec2, fidnames1, fidnames2)
 
     % rename fiducials
     % ----------------
-    ind1 = strmatch(fidnames1{1}, elec1.label, 'exact'); fidnames2{1} = elec1.label{ind1};
-    ind2 = strmatch(fidnames1{2}, elec1.label, 'exact'); fidnames2{2} = elec1.label{ind2};
-    ind3 = strmatch(fidnames1{3}, elec1.label, 'exact'); fidnames2{3} = elec1.label{ind3};
+    ind1 = strmatch(fidnames1{1}, elec1.label, 'exact'); elec1.label{ind1} = fidnames2{1};
+    ind2 = strmatch(fidnames1{2}, elec1.label, 'exact'); elec1.label{ind2} = fidnames2{2};
+    ind3 = strmatch(fidnames1{3}, elec1.label, 'exact'); elec1.label{ind3} = fidnames2{3};
     cfg          = [];
     cfg.elec     = elec1;
     cfg.template = elec2;

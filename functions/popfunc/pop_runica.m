@@ -386,7 +386,6 @@ else
         disp('Concatenating datasets...');
         totalpnts = 0;
         EEG = ALLEEG(g.dataset(1));
-        EEG.data = zeros(EEG.nbchan, totalpnts);
         
         cpnts = 1;
         % compute total data size
@@ -394,6 +393,7 @@ else
         for i = g.dataset
             totalpnts = totalpnts+ALLEEG(g.dataset(i)).pnts*ALLEEG(g.dataset(i)).trials;
         end
+        EEG.data = zeros(EEG.nbchan, totalpnts);
             
         for i = g.dataset
             tmplen = ALLEEG(g.dataset(i)).pnts*ALLEEG(g.dataset(i)).trials;
