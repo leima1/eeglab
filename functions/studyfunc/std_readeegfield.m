@@ -22,7 +22,7 @@
 %  dataOut   - cell array of value
 %  xvals     - x values
 %  note: the output matches the output of std_readfile because this
-%  function can be calle by STD_READDATA
+%  function can be called by STD_READDATA
 %
 % Example:
 %  std_precomp(STUDY, ALLEEG, { ALLEEG(1).chanlocs.labels }, 'erp', 'on');
@@ -86,11 +86,6 @@ end
 for iDes = 1:length(designvar)
     if ~isfield(datasetinfo, designvar(iDes).label)
         error('This function read fields of the EEG structure so it can only handle STUDY designs comparing datasets (not trials within datasets)')
-    end
-    for iVar1 = 1:length(designvar(iDes).value)
-        if isnumeric(designvar(iDes).value{iVar1})
-            error('This function cannot handle numerical condition (because not tested; should be easy to fix')
-        end
     end
 end
 

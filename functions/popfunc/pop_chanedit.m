@@ -82,7 +82,7 @@
 %                   Ex: 'chans(3) = chans(14)', 'X = -X' or a multi-step transform
 %                   with steps separated by ';': Ex. 'TMP = X; X = Y; Y = TMP'
 %   'changechan'  - {number value1 value2 value3 ...} Change the values of all fields
-%                   for the given channel number, mimimally {num label theta radius}.
+%                   for the given channel number, minimally {num label theta radius}.
 %                   Ex: 'changechan' {12 'PXz' -90 0.30}
 %   'changefield' - {number field value} Change field value for channel number number.
 %                   Ex: {34 'theta' 320.4}.
@@ -193,6 +193,9 @@ if isempty(chans) || all(~ishandle(chans))
                 [~, chaninfo, urchans, com] = pop_chanedit(EEG, orichaninfo, varargin{:});
             else
                 com = sprintf('EEG = pop_chanedit(EEG, ''%s'', %s);', orichaninfo, vararg2str(varargin));
+            end
+            if isequal(com, 'EEG=pop_chanedit(EEG, []);')
+                return
             end
             
             % Apply to all datasets and resave if necessary
