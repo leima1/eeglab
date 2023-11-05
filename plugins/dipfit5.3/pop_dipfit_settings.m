@@ -332,7 +332,7 @@ g = finputcheck(options, { 'hdmfile'  'string'    []         '';
                                  'chanfile' ''    []         '';
                                  'chansel'  'integer'   []         1:EEG.nbchan;
                                  'electrodes' 'integer'   []         [];
-                                 'coord_transform' ''     []         ''; % this does nothing while [] set to empty
+                                 'coord_transform' ''     []         ''; % this does nothing when set to empty []
                                  'plotalignment' 'string'     {'on' 'off'}         'off';
                                  'model'      'string'    {'standardBEM' 'standardBESA' ''}         '';
                                  'coordformat' 'string'    { } '' });
