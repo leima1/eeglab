@@ -57,16 +57,20 @@ if nargin < 3
     return;
 end
 
-[ g timefreqopts ] = finputcheck(varargin, ...
+[ g, timefreqopts ] = finputcheck(varargin, ...
     {'powbase'       'real'      []          NaN;
     'basenorm'      'string'    {'on','off'} 'off';
     'baseline'      'real'      []          0;
     'commonbase'    'string'    {'on','off'} 'off';
     'singletrials'  'string'    {'on','off'} 'on';
-    'trialbase'     'string'    {'on','off','full'} 'off'; % 'on' skip the baseline
-    'verbose'       'string'    {'on','off'} 'on';
+    'trialbase',     'string',    {'on', 'off', 'full'}, 'off';
+    'verbose',       'string',    {'on', 'off'}, 'on';
     }, 'newtimefbaseln', 'ignore');
-if ischar(g) error(g); return; end
+
+if ischar(g)
+    error(g);
+    return;
+end
 PP = PPori; if ~iscell(PP), PP = { PP }; end
 
 % ---------------
@@ -78,7 +82,7 @@ if size(g.baseline,2) == 2
         tmptime   = find(timesout >= g.baseline(index,1) & timesout <= g.baseline(index,2));
         baseln = union_bc(baseln, tmptime);
     end
-    if length(baseln)==0
+    if isempty(baseln)
         error( [ 'There are no sample points found in the default baseline.' 10 ...
             'This may happen even though data time limits overlap with' 10 ...
             'the baseline period (because of the time-freq. window width).' 10 ...
@@ -138,7 +142,7 @@ if strcmpi(g.commonbase, 'on')
     end
     for ind = 1:length(PP(:))
         allMbase{ind} = meanBaseln;
-        allMstd{ind}  = meanBaseln;
+        allMstd{ind}  = meanStd;
     end
 end
 
@@ -172,4 +176,6 @@ end
 
 % print
 function verboseprintf(verbose, varargin)
-if strcmpi(verbose, 'on') fprintf(varargin{:}); end
+    if strcmpi(verbose, 'on')
+        fprintf(varargin{:});
+    end

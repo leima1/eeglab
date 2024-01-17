@@ -68,6 +68,9 @@
 %   pinter     - [array or cell] groups x conditions statistics. Output of
 %                STATCOND function.
 %
+% Important note: This data implement baseline correction and proper
+%                 scaling.
+%
 % Example:
 %        >> [STUDY] = std_erspplot(STUDY,ALLEEG, 'clusters', 'all', ...
 %                                       'mode', 'together');
@@ -162,13 +165,13 @@ options = myrmfield( options, { 'threshold' 'statistics' } ); % for backward com
 [ opt, moreparams ] = finputcheck( options, { ...
                                'design'      'integer' [] STUDY.currentdesign;
                                'caxis'       'real'    [] [];
-                               'statmode'    'string'  [] ''; % deprecated
-                               'channels'    'cell'    []              {};
+                               'statmode'  , 'string' , [] , '';
+                               'channels'  , 'cell'   , [] , {};
                                'clusters'    'integer' []              [];
                                'datatype'    'string'  { 'itc','ersp','pac' 'erpim' } 'ersp';
                                'plottf'      'real'    []              [];
-                               'mode'        'string'  []              ''; % for backward compatibility (now used for statistics)
-                               'comps'       {'integer','string'}  []              []; % for backward compatibility
+                               'mode',        'string',  [],  '';
+                               'comps',       {'integer','string'},  [],  [];
                                'plotsubjects' 'string' { 'on','off' }  'off';
                                'noplot'      'string'  { 'on','off' }  'off';
                                'plotmode'    'string'  { 'normal','condensed','none' }  'normal';

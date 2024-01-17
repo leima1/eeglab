@@ -40,6 +40,9 @@
 %  events   - [cell array] events (corresponding to the data)
 %  params   - [struct] structure containing parameters
 %
+% Important note: This function does not do baseline correction for ERSP. 
+%                 To get the baseline corrected data use the function STD_ERSPPLOT
+%
 % Example:
 %  std_precomp(STUDY, ALLEEG, { ALLEEG(1).chanlocs.labels }, 'erp', 'on');
 %  [erp times] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(1).labels });
@@ -336,9 +339,14 @@ if ~isempty(opt.clusters)
                         correspInd(end+1) = iDat1;
                         % check dimensions of components
                         if ~isempty(dataTmp{iDat1}{iDat2})
-                            if strcmpi(opt.singletrials, 'on') && (strcmpi(tmpDataType, 'timef') || strcmpi(tmpDataType, 'erpim')),    dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,:,:,iComps);
-                            elseif strcmpi(opt.singletrials, 'on') || (strcmpi(tmpDataType, 'timef') || strcmpi(tmpDataType, 'erpim')) dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,:,iComps);
-                            else                                                                                                       dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,iComps);
+                            if strcmpi(opt.singletrials, 'on') && ...
+                                    (strcmpi(tmpDataType, 'timef') || strcmpi(tmpDataType, 'erpim'))
+                                dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,:,:,iComps);
+                            elseif strcmpi(opt.singletrials, 'on') || ...
+                                    (strcmpi(tmpDataType, 'timef') || strcmpi(tmpDataType, 'erpim'))
+                                dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,:,iComps);
+                            else                                                                                                       
+                                dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,iComps);
                             end
                         end
                     end

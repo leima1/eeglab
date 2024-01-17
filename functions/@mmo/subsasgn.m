@@ -264,14 +264,16 @@ else
             % array, copy each channel
             for index1 = 1:size(val,1)
                 ss2(1).subs{1} = index1;
-                if ischar(ss(1).subs{1}) ss3(1).subs{1} = index1;
-                else                    ss3(1).subs{1} = ss(1).subs{1}(index1);
+                if ischar(ss(1).subs{1})
+                    ss3(1).subs{1} = index1;
+                else
+                    ss3(1).subs{1} = ss(1).subs{1}(index1);
                 end
                 tmpMMO.Data.x = builtin('subsasgn', tmpMMO.Data.x, ss3, subsref(val,ss2));
             end
         end
     end
-        
+
     obj = updateWorkspace(obj);
     
 end

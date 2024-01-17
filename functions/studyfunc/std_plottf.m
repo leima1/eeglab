@@ -100,15 +100,15 @@ end
 
 opt = finputcheck( varargin, { 'titles'         'cell'   []              cellfun(@num2str, cell(20,20), 'uniformoutput', false);
                                'caxis'          'real'   []              [];
-                               'ersplim'        'real'   []              []; % same as above
-                               'itclim'         'real'   []              []; % same as above
+                               'ersplim',        'real',   [],           [];
+                               'itclim',         'real',   [],           [];
                                'ylim'           'real'   []              [];
                                'tftopoopt'      'cell'   []              {};
                                'threshold'      'real'   []              NaN;
-                               'unitx'          'string' []              'ms'; % just for titles
-                               'unitcolor'      'string' {}              'dB';
+                               'unitx'      'string' []                  'ms';
+                               'unitcolor'  'string' {}                  'dB';
                                'chanlocs'       'struct' []              struct('labels', {});
-                               'freqscale'      'string' { 'log','linear','auto' }  'auto'; % note that paramsersp in std_erspplot contains the information as well
+                               'freqscale'      'string' { 'log','linear','auto' }  'auto'; 
                                'effect'         'string' { 'main','marginal' }   'marginal';
                                'averagemode'    'string' { 'rms','ave' }   'rms';
                                'events'         'cell'   []              {};
@@ -120,7 +120,7 @@ opt = finputcheck( varargin, { 'titles'         'cell'   []              cellfun
                                'datatype'       'string' { 'ersp','itc' 'erpim' }    'ersp';
                                'plotmode'       'string' { 'normal','condensed' }  'normal' }, 'std_plottf');
 if ischar(opt), error(opt); end
-if all(all(cellfun('size', data, 3)==1))               opt.singlesubject = 'on'; end
+if all(all(cellfun('size', data, 3)==1)), opt.singlesubject = 'on'; end
 
 % remove empty entries
 datapresent = ~cellfun(@isempty, data);

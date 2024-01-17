@@ -88,7 +88,9 @@ if nargin < 1
 	[filename, filepath] = uigetfile('*.*', 'Choose a data file -- pop_biosig()', 'multiselect', 'on'); %%% this is incorrect in original version!!!!!!!!!!!!!!
     drawnow;
     
-	if isequal(filename,0) return; end
+    if isequal(filename, 0)
+        return;
+    end
     
     if iscell(filename)
         buttonName = questdlg2([ 'Do you want to automatically save imported datasets?' 10 ...
@@ -153,7 +155,9 @@ if nargin < 1
 
     [~,~,~,result] = inputgui( geom, uilist, 'pophelp(''pop_biosig'')', ...
                                  'Load data using BIOSIG -- pop_biosig()');
-    if length(result) == 0 return; end
+    if length(result) == 0 
+        return; 
+    end
     
     % decode GUI params
     % -----------------
@@ -197,12 +201,16 @@ g = finputcheck( options, { 'blockrange'   'integer' [0 Inf]    [];
                             'memorymapped' 'string'  { 'on';'off' } 'off';
                             'blockepoch'   'string'  { 'on';'off' } 'off' }, 'pop_biosig');
 if ischar(g), error(g); end
-
-if ~iscell(filename) filename = { filename }; end
+if ~iscell(filename)
+    filename = { filename };
+end
 
 for iFile = 1:length(filename)
     % import data
     % -----------
+    if ~exist(filename{iFile})
+        error('File not found %s', filename{iFile})
+    end
     EEG = eeg_emptyset;
     [dat, DAT, interval] = readfile(filename{iFile}, g.channels, g.blockrange, g.memorymapped, g.bdfeventmode, g.overflow, g.uncalibrated);
     
@@ -313,11 +321,15 @@ if strcmpi(overflow, 'off')
     strmode = 'OVERFLOWDETECTION:OFF';
 end
 if strcmpi(uncalibrated, 'on')
-    if ~isempty(strmode) strmode = [ strmode ';' ]; end
+    if ~isempty(strmode)
+        strmode = [strmode ';'];
+    end
     strmode = [ strmode 'UCAL'];
 end
 if ~isequal(bdfeventmode, 4)
-    if ~isempty(strmode) strmode = [ strmode ';' ]; end
+    if ~isempty(strmode)
+        strmode = [strmode ';'];
+    end
     strmode = [ strmode 'BDF:[' num2str(bdfeventmode) ']' ];
 end
 fprintf('sopen mode is "%s"\n', strmode);

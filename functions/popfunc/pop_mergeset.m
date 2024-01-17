@@ -54,7 +54,7 @@
 % 01-25-02 reformated help & license -ad
 % 01-26-02 change format for events and trial conditions -ad
 
-function [INEEG1, com] = pop_mergeset( INEEG1, INEEG2, keepall);
+function [INEEG1, com] = pop_mergeset( INEEG1, INEEG2, keepall)
 
 com = '';
 if nargin < 1
@@ -74,8 +74,9 @@ if nargin == 1
         { 'style' 'text' 'string' 'Preserve ICA weights of the first dataset ?' } ...
         { 'style' 'checkbox' 'string' '' } };
     res = inputgui( 'uilist', uilist, 'geometry', { [3 1] [3 1] }, 'helpcom', 'pophelp(''pop_mergeset'')');
-
-    if isempty(res) return; end
+    if isempty(res)
+        return;
+    end
 
     INEEG2  = eval( [ '[' res{1} ']' ] );
     keepall = res{2};
@@ -97,7 +98,8 @@ if ~isstruct(INEEG2) % if INEEG2 is a vector of ALLEEG indices
     end
     INEEG1 = NEWEEG;
 
-else % INEEG is an EEG struct
+else 
+    % INEEG is an EEG struct
     % check consistency
     % -----------------
     if INEEG1.nbchan ~= INEEG2.nbchan
@@ -177,7 +179,7 @@ else % INEEG is an EEG struct
         % ------------------
         if isstruct(INEEGX{1}.epoch) && isstruct(INEEGX{2}.epoch)
             if length(fieldnames(INEEGX{2}.epoch)) > 0
-                INEEGX{1}.epoch(end+1:end+INEEGX{2}.trials) = orderfields(INEEGX{2}.epoch,INEEGX{1}.epoch);
+                INEEGX{1}.epoch(end+1:end+INEEGX{2}.trials) = orderfields(INEEGX{2}.epoch, INEEGX{1}.epoch);
             else
                 INEEGX{1}.epoch(end+1:end+INEEGX{2}.trials) = INEEGX{2}.epoch;
             end
@@ -204,8 +206,7 @@ else % INEEG is an EEG struct
 
     if INEEG1.trials > 1 || INEEG2.trials > 1 % epoched data
         INEEG1.trials  =  INEEG1.trials + INEEG2.trials;
-
-    else % continuous data
+    else
         INEEG1.pnts = INEEG1.pnts + INEEG2.pnts;
     end
 
@@ -239,7 +240,7 @@ else % INEEG is an EEG struct
 
         % check urevents
         % --------------
-        if ~isfield(INEEG1, 'urevent'),
+        if ~isfield(INEEG1, 'urevent')
             INEEG1.urevent = [];
             fprintf('Warning: first dataset has no urevent structure.\n');
         end
@@ -255,12 +256,16 @@ else % INEEG is an EEG struct
             INEEG1.urevent(end  ).latency = INEEG1pnts+0.5;
         end
 
-    else % is ~isempty(INEEG2.event)
+    else 
 
         % concatenate urevents
         % --------------------
         if isfield(INEEG2, 'urevent')
-            if ~isempty(INEEG2.urevent) && isfield(INEEG1.urevent, 'latency')
+            if isempty(INEEG2.urevent) || ~isfield(INEEG1.urevent, 'latency')
+                INEEG1.urevent = [];
+                INEEG2.urevent = [];
+                fprintf('Warning: second dataset has empty urevent structure.\n');
+            else
 
                 % insert boundary event
                 % ---------------------
@@ -272,7 +277,6 @@ else % INEEG is an EEG struct
                     % cko: sometimes INEEG1 has no events / urevents
                     INEEG1.urevent(end  ).latency = INEEG1pnts+0.5;
                 end
-                    
 
                 % update urevent indices for second dataset
                 % -----------------------------------------
@@ -296,10 +300,7 @@ else % INEEG is an EEG struct
                     [tmpevents((orilen+1):(orilen+newlen)).(f{1})] = INEEG2urevent.(f{1}); 
                 end
                 INEEG1.urevent = tmpevents;
-            else
-                INEEG1.urevent = [];
-                INEEG2.urevent = [];
-                fprintf('Warning: second dataset has empty urevent structure.\n');
+
             end
         end
 
@@ -381,7 +382,7 @@ if nargout > 1
     else
         com = sprintf('EEG = pop_mergeset( ALLEEG, EEG, %d);', keepall);
     end
- end
+end
 
 return
 

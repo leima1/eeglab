@@ -1173,9 +1173,12 @@ if isempty(g.precomputed)
     % ----------------------------------------------------
     % compute time frequency decompositions, power and ITC
     % ----------------------------------------------------
-    if length(g.timesout) > 1,   tmioutopt = { 'timesout' , g.timesout };
-    elseif ~isempty(g.ntimesout) tmioutopt = { 'ntimesout', g.ntimesout };
-    else                         tmioutopt = { 'ntimesout', g.timesout };
+    if length(g.timesout) > 1
+        tmioutopt = {'timesout', g.timesout};
+    elseif ~isempty(g.ntimesout)
+        tmioutopt = {'ntimesout', g.ntimesout};
+    else                         
+        tmioutopt = { 'ntimesout', g.timesout };
     end
 
     [alltfX freqs timesout R] = timefreq(data, g.srate, tmioutopt{:}, ...
@@ -1713,8 +1716,10 @@ switch lower(g.plotitc)
             elseif isempty(maskitc)
                 if size(RR,1) == size(Rboot,1) && size(RR,2) == size(Rboot,2)
                     tmp = gcf;
-                    if size(Rboot,3) == 2	 RR(find(RR > Rboot(:,:,1) & RR < Rboot(:,:,2))) = 0;
-                    else                   RR(find(RR < Rboot)) = 0;
+                    if size(Rboot,3) == 2
+                        RR(find(RR > Rboot(:,:,1) & RR < Rboot(:,:,2))) = 0;
+                    else                   
+                        RR(find(RR < Rboot)) = 0;
                     end
                     Rboot = mean(Rboot(:,:,end),2);
                 else

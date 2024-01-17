@@ -84,7 +84,9 @@ try
         for i = 1:2:numel(varsin)
             queryvars.(varsin{i}) = varsin{i+1};
         end
-    else queryvars = []; end
+    else
+        queryvars = [];
+    end
 catch
     disp('std_gettrialsind() error: calling convention {''key'', value, ... } error'); return;
 end
@@ -131,7 +133,9 @@ for iVar = 1 :  length(varnames)
     else
         % case of categorical variable
         if ischar(dattrials{1})
-            if ischar(indvarvals) indvarvals = { indvarvals }; end
+            if ischar(indvarvals)
+                indvarvals = {indvarvals};
+            end
             if ~iscell(indvarvals)
                 error(sprintf('Type error - excepting numerical values for field %s', varnames{iVar}));
             end

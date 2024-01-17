@@ -127,24 +127,25 @@ if isempty(timevect), timevect = [1 2]; end
 
 % check inputs
 % ------------
-g = finputcheck(varargin, { 'freqs'    'real'   [0 Inf]    [2.5 50 50];
-                            'times'    'real'   []         [100 5]; % see function at the end
-                            'mode'     'string' { 'phase','amp' }  'amp'; 
-                            'vert'     'real'   []         [];
-                            'align'    { 'real','cell' }   []         []; 
-                            'plotvals' 'cell'   []         {}; 
-                            'pmask'    'real'   []         0.00001; 
-                            'triallimit' 'integer'   []       []; 
-                            'trim'     'real'   [0 100]    [0 100]; 
-                            'limits'   'real'   []         [];
-                            'method'   'string' { 'erpimage','timefreq' }        'timefreq';
-                            'plot'     'string' { 'no','alpha','sigout','sigoutm','sigoutp','sigoutm2' }  'sigoutm'; 
-                            'nofig'    'string' { 'on','off' } 'off';
-                            'cbar'     'string' { 'on','off' } 'on';
-                            'smooth'   'string' { 'on','off' } 'off';
-                            'erpout'   'real'   []             [];
-                            'tfopt'    'cell'   []             {};
-                            'erpimopt' 'cell'   []             {} });
+g = finputcheck(varargin, { ...
+    'freqs'    'real'   [0 Inf]    [2.5 50 50];
+    'times',    'real',   [],         [100 5];
+    'mode',     'string', { 'phase', 'amp' }, 'amp';
+    'vert'     'real'   []         [];
+    'align'    { 'real','cell' }   []         [];
+    'plotvals' 'cell'   []         {};
+    'pmask'    'real'   []         0.00001;
+    'triallimit' 'integer'   []       [];
+    'trim'     'real'   [0 100]    [0 100];
+    'limits'   'real'   []         [];
+    'method'   'string' { 'erpimage','timefreq' }        'timefreq';
+    'plot'     'string' { 'no','alpha','sigout','sigoutm','sigoutp','sigoutm2' }  'sigoutm';
+    'nofig'    'string' { 'on','off' } 'off';
+    'cbar'     'string' { 'on','off' } 'on';
+    'smooth'   'string' { 'on','off' } 'off';
+    'erpout'   'real'   []             [];
+    'tfopt'    'cell'   []             {};
+    'erpimopt' 'cell'   []             {} });
 if ischar(g), error(g); end
 
 fprintf('Generating %d frequencies in log scale (ignore message on linear scale)\n', g.freqs(2));
@@ -367,9 +368,9 @@ elseif isempty(g.plotvals)
             end
         
             % computing ITCs
-            [ypred alpha(freq, time) Rsq slope(freq, time)] = myregress(outvar, 20*log10(phsamp));
+            [ypred alpha(freq, time) Rsq slope(freq, time)] = fastregress(outvar, 20*log10(phsamp));
         end
-    end;    
+    end  
     sigout = slope;
 else 
     g.times = g.plotvals{1};

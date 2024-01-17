@@ -74,12 +74,16 @@ if nargin < 1
     if strcmpi(ButtonName, 'file')
         [filename, filepath] = uigetfile('*.*', 'Choose a file or header file -- pop_fileio()'); 
         drawnow;
-        if filename(1) == 0 return; end
+        if filename(1) == 0
+            return;
+        end
         filename = fullfile(filepath, filename);
     else
-        filename = uigetdir('*.*', 'Choose a folder -- pop_fileio()'); 
+        filename = uigetdir('*.*', 'Choose a folder -- pop_fileio()');
         drawnow;
-        if filename(1) == 0 return; end
+        if filename(1) == 0
+            return;
+        end
     end
     
     % open file to get infos
@@ -125,7 +129,9 @@ if nargin < 1
     end
 
     [result,~,~,restag] = inputgui( geom, uilist, 'pophelp(''pop_fileio'')', 'Load data using FILE-IO -- pop_fileio()');
-    if isempty(result) return; end
+    if isempty(result) 
+        return; 
+    end
     if ~isfield(restag, 'trials')
         restag.trials = '';
     end
@@ -215,7 +221,11 @@ end
 % convert to seconds for sread
 % ----------------------------
 if isfield(dat, 'hdr') && ~isfield(dat, 'Fs')
-    if isfield(dat, 'fsample') EEG.srate = dat.fsample; else EEG.srate = dat.hdr.Fs; end
+    if isfield(dat, 'fsample')
+        EEG.srate = dat.fsample;
+    else
+        EEG.srate = dat.hdr.Fs;
+    end
     EEG.nbchan          = dat.hdr.nChans;
     EEG.data            = alldata;
     if iscell(EEG.data)

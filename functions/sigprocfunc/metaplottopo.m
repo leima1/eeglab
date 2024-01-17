@@ -298,7 +298,9 @@ for c=1:length(g.chans) %%%%%%%% for each data channel %%%%%%%%%%%%%%%%%%%%%%%%%
         if length(g.datapos) >= 3
             tmp = [ tmp(1:g.datapos(3)-1) { data{3}(c,:,:,:,:) } tmp(g.datapos(3):end) ];
         end
-        if strcmpi(g.squeeze, 'on') tmp{g.datapos} = squeeze(tmp{g.datapos}); end
+        if strcmpi(g.squeeze, 'on')
+            tmp{g.datapos} = squeeze(tmp{g.datapos});
+        end
         tmp = { tmp{:} 'title' channames(c,:) 'plotmode' 'topo'};
         feval(func, tmp{:});
     end

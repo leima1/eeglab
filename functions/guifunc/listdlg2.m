@@ -60,7 +60,7 @@ if ischar(g.liststring)
 else
     allstr = '';
     for index = 1:length(g.liststring)
-        allstr = [ allstr '|' g.liststring{index} ];
+        allstr = [allstr '|' g.liststring{index}];
     end
     allstr = allstr(2:end);
 end
@@ -106,18 +106,18 @@ vals = [];
 figure(fig);
 drawnow;
 waitfor( fig, 'userdata');
-try,
+try
 	vals = get(h, 'value');
 	strval = '';
     if iscell(g.liststring)
         for index = vals
-            strval = [ strval ' ' g.liststring{index} ];
+            strval = [strval ' ' g.liststring{index}];
         end
     else
         for index = vals
             strval = [ strval ' ' g.liststring(index,:) ];
         end
-    end;        
+    end
 	strval = strval(2:end);
 	if strcmp(get(fig, 'userdata'), 'cancel')
 		okornot = 0;
@@ -126,4 +126,5 @@ try,
 	end
 	close(fig);
     drawnow;
+catch
 end

@@ -35,8 +35,10 @@ function [s varargout] = size(obj,dim)
         if length(obj.dimensions) ~= 2 && length(obj.dimensions) ~= 3
             error('Transposed array must be 2 or 3 dims');
         end
-        if length(obj.dimensions) == 2 tmpdimensions = [obj.dimensions(2) obj.dimensions(1)];
-        else                           tmpdimensions = [obj.dimensions(3) obj.dimensions(1:end-1)];
+        if length(obj.dimensions) == 2
+            tmpdimensions = [obj.dimensions(2) obj.dimensions(1)];
+        else
+            tmpdimensions = [obj.dimensions(3) obj.dimensions(1:end-1)];
         end
     else
         tmpdimensions = obj.dimensions;

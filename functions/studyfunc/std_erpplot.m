@@ -160,10 +160,10 @@ opt = finputcheck( options, ...
                                'channels'    'cell'    []              {};
                                'clusters'    'integer' []              [];
                                'datatype'    'string'  {}              'erp';
-                               'mode'        'string'  []              ''; % for backward compatibility (now used for statistics)
-                               'comps'       { 'string','integer' } [] []; % for backward compatibility
-                               'statmode'    'string'  { 'subjects','common','trials' } 'subjects'; % ignored
-                               'avgmode'     'string'  { 'mean','rms','median' } 'mean'; 
+                               'mode'  'string'  []  '';
+                               'comps'  { 'string', 'integer' }  []  [];
+                               'statmode'    'string'  { 'subjects','common','trials' } 'subjects';
+                               'avgmode'     'string'  { 'mean','rms','median' } 'mean';
                                'plotmode'    'string'  { 'normal','condensed' }  'normal';
                                'unitx'       'string'  { 'ms','Hz' }    'ms';
                                'plotsubjects' 'string' { 'on','off' }  'off';
@@ -318,7 +318,7 @@ if ~isempty(opt.channels)
     [pcond, pgroup, pinter] = std_stat(erpdata, stats);
     if (~isempty(pcond) && length(pcond{1}) == 1) || (~isempty(pgroup) && length(pgroup{1}) == 1), pcond = {}; pgroup = {}; pinter = {}; end % single subject STUDY                                
     if ~isempty(params.topotime) && length(opt.channels) > 5 && ndims(erpdata{1}) < 3, pcond = {}; pgroup = {}; pinter = {}; end % topo plotting for single subject
-    if strcmpi(opt.noplot, 'on') return; end
+    if strcmpi(opt.noplot, 'on'), return; end
     
     % get titles (not included in std_erspplot because it is not possible
     % to merge channels for that function
