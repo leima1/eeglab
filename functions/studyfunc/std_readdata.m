@@ -24,6 +24,9 @@
 %  'component' - [integer] select a specific component in a cluster.
 %                This is the index of the component in the cluster not the
 %                component number {default:all}
+%  'ndim'       - [integer] number of dimension of output array
+%  'customread' - [func] custom function to read data. See example.
+%  'customparams' - [cell] custom parameters for function above. See example.
 %
 % ERP specific optional inputs:
 %  'timerange' - [min max] time range {default: whole measure range}
@@ -39,14 +42,25 @@
 %  yvals    - [float array] array of second dim values (for example frequencies)
 %  events   - [cell array] events (corresponding to the data)
 %  params   - [struct] structure containing parameters
+%  setinds  - [cell array] index of the dataset for each cell member in
+%             datavals. Could be ambiguous if datasets are merged in the 
+%             datavals array (the setinds will then contain the index of 
+%             one of the datasets).
+%  datainfo - [cell array] trial and participant info corresponding to the 
+%             datavals array.
 %
 % Important note: This function does not do baseline correction for ERSP. 
 %                 To get the baseline corrected data use the function STD_ERSPPLOT
 %
 % Example:
 %  std_precomp(STUDY, ALLEEG, { ALLEEG(1).chanlocs.labels }, 'erp', 'on');
-%  [erp times] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(1).labels });
+%  [STUDY,erp,times] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(1).labels });
 %
+%  % To read field 'EEG.etc.eegstats.alpha_asymmetry' for each dataset, enter
+%  % (note that you need to use the eegstats plugin to compute this value first)
+%  [STUDY,aa] = std_readdata(STUDY, ALLEEG, 'customread', 'std_readeegfield', ...
+%               'customparams', {{ 'etc', 'eegstats', 'alpha_asymmetry' }}, 'ndim', 1);
+% 
 % Author: Arnaud Delorme, CERCO, 2006-
 
 % Copyright (C) Arnaud Delorme, arno@salk.edu
@@ -76,7 +90,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function [STUDY, datavals, xvals, yvals, events, params, setinds] = std_readdata(STUDY, ALLEEG, varargin)
+function [STUDY, datavals, xvals, yvals, events, params, setinds, datainfo] = std_readdata(STUDY, ALLEEG, varargin)
 
 if nargin < 2
     help std_readdata;
@@ -221,25 +235,26 @@ for iSubj = 1:length(subjectList)
     [STUDY.cache, tmpstruct] = eeg_cache(STUDY.cache, hashcode);
     
     if ~isempty(tmpstruct)
-        dataTmp{iSubj}   = tmpstruct{1};
-        xvals            = tmpstruct{2};
-        yvals            = tmpstruct{3};
-        eventsTmp{iSubj} = tmpstruct{4};
-        params           = tmpstruct{5};
+        dataTmp{iSubj}     = tmpstruct{1};
+        xvals              = tmpstruct{2};
+        yvals              = tmpstruct{3};
+        eventsTmp{iSubj}   = tmpstruct{4};
+        params             = tmpstruct{5};
+        dataTmpSubj{iSubj} = tmpstruct{6};
     else
         datInds = find(strncmp( subjectList{iSubj}, allSubjects, max(cellfun(@length, allSubjects))));
-        
+
         if isempty(opt.customread)
             fileName = getfilename({STUDY.datasetinfo(datInds).filepath}, STUDY.datasetinfo(datInds(1)).subject, { STUDY.datasetinfo(datInds).session }, fileExt, length(uniqueSessions) == 1);
             if ~isempty(opt.channels)
-                 [dataTmp{iSubj}, params, xvals, yvals, eventsTmp{iSubj} ] = std_readfile( fileName, 'designvar', struct(bigstruct.design.variable), opts{:}, 'channels', opt.channels);
-            else [dataTmp{iSubj}, params, xvals, yvals, eventsTmp{iSubj} ] = std_readfile( fileName, 'designvar', struct(bigstruct.design.variable), opts{:}, 'components', compList);
+                 [dataTmp{iSubj}, params, xvals, yvals, eventsTmp{iSubj}, dataTmpSubj{iSubj} ] = std_readfile( fileName, 'designvar', struct(bigstruct.design.variable), opts{:}, 'channels', opt.channels);
+            else [dataTmp{iSubj}, params, xvals, yvals, eventsTmp{iSubj}, dataTmpSubj{iSubj} ] = std_readfile( fileName, 'designvar', struct(bigstruct.design.variable), opts{:}, 'components', compList);
             end
         else
             % read custom data
-            [dataTmp{iSubj}, params, xvals, yvals, eventsTmp{iSubj}] = feval(opt.customread, STUDY.datasetinfo(datInds), ALLEEG(datInds), struct(bigstruct.design.variable), opt.customparams{:}, opts{:});
+            [dataTmp{iSubj}, params, xvals, yvals, eventsTmp{iSubj}, dataTmpSubj{iSubj}] = feval(opt.customread, STUDY.datasetinfo(datInds), ALLEEG(datInds), struct(bigstruct.design.variable), opt.customparams{:}, opts{:});
         end
-        if ~strcmpi(opt.datatype, 'ersp') && ~strcmpi(opt.datatype, 'itc') && ~strcmpi(opt.datatype, 'erpim') % ERP or spectrum
+        if ~strcmpi(opt.datatype, 'ersp') && ~strcmpi(opt.datatype, 'itc') && ~strcmpi(opt.datatype, 'erpim') % ERP or spectrum or Custom single trials
             % inverting ERP polarity when relevant
             if strcmpi(opt.datatype, 'erp') && ~isempty(opt.clusters) && strcmpi(opt.componentpol, 'on')
                 polList = reshape(polList,[1 1 length(polList)]); % components are in the 3rd dim
@@ -247,6 +262,7 @@ for iSubj = 1:length(subjectList)
             end
             if strcmpi(opt.singletrials, 'off')
                 dataTmp{iSubj} = cellfun(@(x)squeeze(mean(x,2)), dataTmp{iSubj}, 'uniformoutput', false); % average
+                for iCond = 1:length(dataTmpSubj{iSubj}(:)), if ~isempty(dataTmpSubj{iSubj}{iCond}), dataTmpSubj{iSubj}{iCond} = dataTmpSubj{iSubj}{iCond}(1); end; end
             end
             if strcmpi(opt.datatype, 'spec') && isfield(params, 'logtrials') && strcmpi(params.logtrials, 'off') % if log trial if off it means that single trials are raw power so we need to take the log of the mean
                 dataTmp{iSubj} = cellfun(@(x)squeeze(10*log10(x)), dataTmp{iSubj}, 'uniformoutput', false); % average
@@ -262,11 +278,14 @@ for iSubj = 1:length(subjectList)
                 yvalsERPim = 1:size(dataTmp{iSubj}{nonEmptyCell(1)},1);
             end
         elseif strcmpi(opt.datatype, 'custom')
-            disp('Nothing to do for custom data');
+            % Nothing to do for custom data, this is done at reading time
         else
             dataTmp{iSubj} = cellfun(@(x)processtf(x, xvals, opt.datatype, opt.singletrials, params), dataTmp{iSubj}, 'uniformoutput', false);
+            if strcmpi(opt.singletrials, 'off')
+                for iCond = 1:length(dataTmpSubj{iSubj}(:)), if ~isempty(dataTmpSubj{iSubj}{iCond}), dataTmpSubj{iSubj}{iCond} = dataTmpSubj{iSubj}{iCond}(1); end; end
+            end
         end
-        STUDY.cache = eeg_cache(STUDY.cache, hashcode, { dataTmp{iSubj} xvals yvals eventsTmp{iSubj} params });
+        STUDY.cache = eeg_cache(STUDY.cache, hashcode, { dataTmp{iSubj} xvals yvals eventsTmp{iSubj} params dataTmpSubj{iSubj} });
     end
 end
 if strcmpi(opt.datatype, 'erpim')
@@ -314,6 +333,7 @@ if ~isempty(opt.clusters)
     % Split ICA components from the same subjects need to be made 
     % as if coming from different subjects
     dataTmp2 = {};
+    dataTmpSubj2 = {};
     correspInd = [];
     realDim  = dim;
     if strcmpi(opt.singletrials, 'on'), realDim = realDim+1; end
@@ -323,7 +343,7 @@ if ~isempty(opt.clusters)
                 dataTmp{iDat1}{iDat2} = double.empty(0,0,0); % sometimes empty but all dim not 0
             end
         end
-        compNumbers = cellfun(@(x)size(x, realDim), dataTmp{iDat1});
+        compNumbers = cellfun(@(x)size(x, realDim)*~isempty(x), dataTmp{iDat1});
         uniqComps = unique(compNumbers);
         if length(uniqComps) > 1 
             if ~(uniqComps(1) == 0 && length(uniqComps) == 2)
@@ -335,18 +355,22 @@ if ~isempty(opt.clusters)
             for iDat2 = 1:length(dataTmp{iDat1}(:))
                 if compNumbers(iDat2)
                     for iComps = 1:compNumbers(iDat2)
-                        dataTmp2{end+1} = cell(size(dataTmp{iDat1}));
+                        dataTmp2{end+1}     = cell(size(dataTmp{iDat1}));
+                        dataTmpSubj2{end+1} = cell(size(dataTmp{iDat1}));
                         correspInd(end+1) = iDat1;
                         % check dimensions of components
                         if ~isempty(dataTmp{iDat1}{iDat2})
                             if strcmpi(opt.singletrials, 'on') && ...
                                     (strcmpi(tmpDataType, 'timef') || strcmpi(tmpDataType, 'erpim'))
                                 dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,:,:,iComps);
+                                dataTmpSubj2{end}{iDat2} = dataTmpSubj{iDat1}{iDat2}(:,:,:,1);
                             elseif strcmpi(opt.singletrials, 'on') || ...
                                     (strcmpi(tmpDataType, 'timef') || strcmpi(tmpDataType, 'erpim'))
                                 dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,:,iComps);
+                                dataTmpSubj2{end}{iDat2} = dataTmpSubj{iDat1}{iDat2}(:,:,1);
                             else                                                                                                       
                                 dataTmp2{end}{iDat2} = dataTmp{iDat1}{iDat2}(:,iComps);
+                                dataTmpSubj2{end}{iDat2} = dataTmpSubj{iDat1}{iDat2}(:,1);
                             end
                         end
                     end
@@ -355,35 +379,27 @@ if ~isempty(opt.clusters)
         end
     end
     dataTmp = dataTmp2;
+    dataTmpSubj = dataTmpSubj2;
 else
     correspInd = 1:length(dataTmp); % identity for channels 
 end
-[datavals,setinds] = reorganizedata(dataTmp, dim);
+datavals = reorganizedata(dataTmp, dim);
 
 % fix setinds index
 if nargout > 6
-    allSubjects = { STUDY.datasetinfo.subject };
-    for iCond = 1:length(setinds(:))
-        for iItem = 1:length(setinds{iCond})
-            caseVal = setinds{iCond}(iItem);
-            caseVal = correspInd(caseVal); % for clusters, for channel it is identity
-            subject = STUDY.design(opt.design).cases.value{caseVal};
-            ind = strmatch(subject, allSubjects, 'exact');
-            if length(ind) ~= 1
-                error('More than one dataset per subject, cannot generate setinds')
-            else
-                setinds{iCond}(iItem) = ind;
-            end
-        end
+    datainfo = reorganizedatastruct(dataTmpSubj);
+    try
+        setinds = cellfun(@(x)[x.index], datainfo, 'UniformOutput', false);
+    catch
+        error('Error generating dataset indices, either remove the setinds output or recompute your measures')
     end
 end
 
 % reorganize data
 % ---------------
-function [datavals,setinds] = reorganizedata(dataTmp, dim)
+function datavals = reorganizedata(dataTmp, dim)
     nonEmptyCell = find( cellfun(@isempty, dataTmp) == 0);
     datavals = cell(size(dataTmp{nonEmptyCell(1)}));
-    setinds  = cell(size(dataTmp{nonEmptyCell(1)}));
         
     % copy data
     for iItem=1:length(dataTmp{nonEmptyCell(1)}(:)')
@@ -412,7 +428,6 @@ function [datavals,setinds] = reorganizedata(dataTmp, dim)
                 else
                     numItems = size(dataTmp{iCase}{iItem},dim);
                 end
-                setinds{iItem}(end+1) = iCase;
                 switch dim
                     case 1, datavals{iItem}(:,count:count+numItems-1) = dataTmp{iCase}{iItem};
                     case 2, datavals{iItem}(:,count:count+numItems-1) = dataTmp{iCase}{iItem}; 
@@ -423,6 +438,26 @@ function [datavals,setinds] = reorganizedata(dataTmp, dim)
             end
         end
     end
+
+% reorganize data struct
+% ---------------
+function [datavals,setinds] = reorganizedatastruct(dataTmp)
+    nonEmptyCell = find( cellfun(@isempty, dataTmp) == 0);
+    datavals = cell(size(dataTmp{nonEmptyCell(1)}));
+    setinds  = cell(size(dataTmp{nonEmptyCell(1)}));
+        
+    % copy data
+    for iItem=1:length(dataTmp{nonEmptyCell(1)}(:)') % conditions * group
+        count = 1;
+        for iCase = 1:length(dataTmp) % subjects
+            if ~isempty(dataTmp{iCase}{iItem})
+                numItems = length(dataTmp{iCase}{iItem});
+                setinds{iItem}(end+1) = iCase;
+                datavals{iItem}(count:count+numItems-1) = dataTmp{iCase}{iItem};
+                count = count+numItems;
+            end
+        end
+    end    
     
 % check data for ERPIMAGE
 % -----------------------

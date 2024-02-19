@@ -106,13 +106,13 @@ else
 end
 
 fields = fieldnames(datasetinfo);
-fields = setdiff( fields, { 'filepath'  'filename' 'subject' 'index' 'comps' 'trialinfo' });
+fields = setdiff( fields, { 'filepath'  'filename' 'comps' 'trialinfo' });
 for iDat = 1:length(inds)
     
     for iField = 1:length(fields)
         [trialinfo(nvals(iDat):nvals(iDat+1)-1).(fields{iField})] = deal( datasetinfo(inds(iDat)).(fields{iField}) );
     end
-    
+
     % Checking if field do not exist or if exist and is empty
     % This is old legacy code and it is unclear why the test were so
     % complex so we left it for now to see if the new code generates any

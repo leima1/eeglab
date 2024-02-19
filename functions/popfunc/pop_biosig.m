@@ -119,7 +119,22 @@ if nargin < 1
     % open file to get infos
     % ----------------------
     disp('Reading data file header...');
-    dat = sopen(filename{1}, 'r', [], 'OVERFLOWDETECTION:OFF');
+    try
+        dat = sopen(filename{1}, 'r', [], 'OVERFLOWDETECTION:OFF');
+    catch
+        if nargin < 1
+            lasterror
+            message = [ 'Error loading file... See command line for the exact' 10 ...
+                        'error. Either the file is not supported or it is' 10 ...
+                        'corrupted. Try again loading the file using the same' 10 ...
+                        'menu and check the mexSLOAD checkbox to read the file ' 10 ...
+                        'using a different method.' ];
+            errordlg2(message);
+        else
+            rethrow(rethrow)
+        end
+        return;
+    end
     if ~isfield(dat, 'NRec')
         error('Unsuported data format');
     end
@@ -135,7 +150,7 @@ if nargin < 1
     checkmex = [ 'if ~exist(''mexSLOAD''), set(gcbo, ''value'', 0); ' ...
                  'warndlg2([ ''mexSLOAD not found in path. It needs to be installed.'' 10 ' ...
                  '''It is easier to use this option on Windows where mexSLOAD'' 10 ' ...
-                 '''is automatically installed with BIOSIG.'' ]); end' ];
+                 '''is automatically installed with BIOSIG. For MAC and Unix see'' 10 ''https://sourceforge.net/p/biosig/wiki/FAQ/'' ]); end' ];
     uilist = { { 'style' 'text' 'String' 'Channel list (default all):' } ...
                  { 'style' 'edit' 'string' '' 'tag' 'channels' } ...
                  { 'style' 'text' 'String' [ 'Data range (in seconds) to read (default all [0 ' int2str(dat.NRec) '])' ] } ...
@@ -212,12 +227,11 @@ for iFile = 1:length(filename)
         error('File not found %s', filename{iFile})
     end
     EEG = eeg_emptyset;
-    [dat, DAT, interval] = readfile(filename{iFile}, g.channels, g.blockrange, g.memorymapped, g.bdfeventmode, g.overflow, g.uncalibrated);
+    [dat, DAT, interval] = readfile(filename{iFile}, [], g.blockrange, g.memorymapped, g.bdfeventmode, g.overflow, g.uncalibrated);
     
     if strcmpi(g.blockepoch, 'off')
         dat.NRec = 1;
     end
-    
     EEG = biosig2eeglab(dat, DAT, interval, g.channels, strcmpi(g.importevent, 'on'), strcmpi(g.importannot, 'on'));
     
     if strcmpi(g.rmeventchan, 'on') && strcmpi(dat.TYPE, 'BDF') && isfield(dat, 'BDF')
