@@ -30,7 +30,7 @@
 %            >> eeglab rebuild   % Closes and rebuilds the EEGLAB window
 %            >> eeglab versions  % State EEGLAB version number
 %
-%   >> type "eeglablicense.txt" % the EEGLAB open source license
+%   >> type "LICENSE"           % the EEGLAB open source license
 %   >> web http://eeglab.org    % the EEGLAB tutorial
 %   >> help eeg_checkset        % the EEG dataset structure
 %
@@ -256,7 +256,7 @@ if nargin < 1 && ~isdeployed
         eeglabpath2 = mywhich('eeglab.m');
         cd('..');
     else
-        try frmpath(eeglabpath); catch, end
+        try rmpath(eeglabpath); catch, end
         eeglabpath2 = mywhich('eeglab.m');
     end
     if ~isempty(eeglabpath2)
@@ -442,6 +442,13 @@ if nargin == 1
         [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, 0);
         eeglab redraw; 
         return
+	elseif strcmp(onearg, 'study')
+        ALLEEG = []; CURRENTSET = 0; CURRENTSTUDY = 0; STUDY = [];
+        disp('Clearing all data and loading tutorial study')
+        [STUDY, ALLEEG] = pop_loadstudy('filename', 'stern3s.study', 'filepath', '/System/Volumes/Data/data/data/STUDIES/STERN_test_1file_per_subject');
+        EEG = ALLEEG; CURRENTSET = 1:length(EEG); CURRENTSTUDY = 1;
+        eeglab redraw; 
+        return
     elseif strcmp(onearg, 'rebuild')
 		W_MAIN = findobj('tag', 'EEGLAB');
         close(W_MAIN);
@@ -450,14 +457,16 @@ if nargin == 1
     elseif strcmp(onearg, 'full')
         versL = false;
     else
-        fprintf(2,['EEGLAB Warning: Invalid argument ''' onearg '''. Restarting EEGLAB interface instead.\n']);
-        eegh('[ALLEEG EEG CURRENTSET ALLCOM] = eeglab(''rebuild'');');
+        if ~exist(onearg, 'file')
+            fprintf(2,['EEGLAB Warning: Invalid argument ''' onearg '''. Restarting EEGLAB interface instead.\n']);
+            eegh('[ALLEEG EEG CURRENTSET ALLCOM] = eeglab(''rebuild'');');
+        end
 	end
 else 
     onearg = 'rebuild';
 end
 ALLCOM = ALLCOM;
-try, colordef('white'); catch end
+try, colordef('white'); catch end % removed from MATLAB
 if versL
     disp('Some menus items hidden. Use Preference menu to show them all.');
 end
@@ -585,7 +594,7 @@ cb_saveset     = [ check   '[EEG LASTCOM] = pop_saveset(EEG, ''savemode'', ''res
 cb_savesetas   = [ check   '[EEG LASTCOM] = pop_saveset(EEG);'                           e_store ];
 cb_delset      = [ nocheck '[ALLEEG LASTCOM] = pop_delset(ALLEEG, -CURRENTSET);'         e_hist_noeegh 'eeglab redraw;' ];
 cb_study1      = [ nocheck 'pop_stdwarn; [STUDYTMP ALLEEGTMP LASTCOM] = pop_study([], ALLEEG         , ''gui'', ''on'');' e_load_study]; 
-cb_study2      = [ nocheck 'pop_stdwarn; [STUDYTMP ALLEEGTMP LASTCOM] = pop_study([], isempty(ALLEEG), ''gui'', ''on'');' e_load_study]; 
+cb_study2      = [ nocheck 'pop_stdwarn; [STUDYTMP ALLEEGTMP LASTCOM] = pop_studywizard;' e_load_study]; 
 cb_studyerp    = [ nocheck 'pop_stdwarn; [STUDYTMP ALLEEGTMP LASTCOM] = pop_studyerp;' e_load_study]; 
 cb_loadstudy   = [ nocheck 'pop_stdwarn; [STUDYTMP ALLEEGTMP LASTCOM] = pop_loadstudy; if ~isempty(LASTCOM), STUDYTMP = std_renamestudyfiles(STUDYTMP, ALLEEGTMP); end;' e_load_study]; 
 cb_savestudy1  = [ check   '[STUDYTMP ALLEEGTMP LASTCOM] = pop_savestudy(STUDY, EEG, ''savemode'', ''resavegui'');'      e_load_study];
@@ -1264,6 +1273,10 @@ end
 % check if update is available
 if ismatlab
     eeglab_update(eeglabVersionStatus);
+end
+
+if isdeployed && ~exist(onearg, 'file')
+    pop_runscript(onearg);
 end
 
 % REMOVED MENUS

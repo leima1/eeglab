@@ -1,14 +1,14 @@
-% POP_RUNSCRIPT - Run Matlab script
+% EEGLAB_WARNING - generate warning disabling backtrace
 %
-% Usage: >> pop_runscript;
-%        >> pop_runscript( filename );
+% Usage: >>  eeglab_warning(msg);
 %
-% Input:
-%   filename - [string] name of the file.
+% Inputs: msg, a string of character.
 %
-% Author: Arnaud Delorme, SCCN / INC / UCSD, August 2009
+% Author: Arnaud Delorme, SCCN, INC, UCSD, 2024-
+%
+% see also: EEGLAB
 
-% Copyright (C) Arnaud Delorme, August 2009
+% Copyright (C) 2024 Arnaud Delorme, UCSD
 %
 % This file is part of EEGLAB, see http://www.eeglab.org
 % for the documentation and details.
@@ -35,21 +35,13 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function com = pop_runscript(filename)
+function eeglab_warning(msg)
 
-com = [];
-if nargin <1
-    [filename, filepath] = uigetfile('*.*', 'Please select input script -- pop_runscript()');
-    
-    if filename(1) == 0, return; end
-
-    filename = fullfile(filepath, filename);
+if nargin < 1
+    error('eeglab_warning needs at least one argument');
 end
 
-str = readtxtfile(filename);
-try
-    evalin('base', str);
-catch
-    lasterr
-end
-com = sprintf('pop_runscript(''%s'');', filename);
+res = warning('backtrace');
+warning('backtrace', 'off');
+warning(msg)
+warning('backtrace', res.state);
