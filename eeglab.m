@@ -413,11 +413,13 @@ if nargin < 1 || exist('EEG') ~= 1
 end
 if isempty(CURRENTSTUDY) CURRENTSTUDY = 0; end
 
+nouiflag = false;
 versL = ~option_allmenus;
 if nargin == 1
-	if strcmp(onearg, 'versions')
+    if strcmp(onearg, 'versions')
         disp( [ 'EEGLAB v' eeg_getversion ] );
 	elseif strcmp(onearg, 'nogui')
+        nouiflag = true;
         if nargout < 1, clear ALLEEG; end % do not return output var
 	elseif strcmp(onearg, 'redraw')
 		W_MAIN = findobj('tag', 'EEGLAB');
@@ -457,9 +459,11 @@ if nargin == 1
     elseif strcmp(onearg, 'full')
         versL = false;
     else
-        if ~exist(onearg, 'file')
+        if ~exist(onearg, 'file') && ~any(onearg == ';')
             fprintf(2,['EEGLAB Warning: Invalid argument ''' onearg '''. Restarting EEGLAB interface instead.\n']);
             eegh('[ALLEEG EEG CURRENTSET ALLCOM] = eeglab(''rebuild'');');
+        else
+            nouiflag = true;
         end
 	end
 else 
@@ -467,8 +471,8 @@ else
 end
 ALLCOM = ALLCOM;
 try, colordef('white'); catch end % removed from MATLAB
-if versL
-    disp('Some menus items hidden. Use Preference menu to show them all.');
+if versL && ~nouiflag
+    disp('Some menu items hidden. Use Preference menu to show them all.');
 end
 
 % default option folder
@@ -548,7 +552,7 @@ catchstrs.load_study             = e_load_study;
 
 % create eeglab figure
 % --------------------
-if ~strcmpi(onearg, 'nogui')
+if ~nouiflag
     eeg_mainfig(onearg);
 end
 
@@ -563,7 +567,7 @@ if ~isdeployed
     % -------------------------------------------------------------
     ptopoplot  = fileparts(mywhich('cbar'));
     ptopoplot2 = fileparts(mywhich('topoplot'));
-    if ~strcmpi(ptopoplot, ptopoplot2),
+    if ~strcmpi(ptopoplot, ptopoplot2)
         %disp('  Warning: duplicate function topoplot.m in Fieldtrip and EEGLAB');
         %disp('  EEGLAB function will prevail and call the Fieldtrip one when appropriate');
         addpath(ptopoplot);
@@ -744,7 +748,7 @@ onepochchan       = 'startup:off;continuous:off;chanloc:on';
 onstudy           = 'startup:off;epoch:off;continuous:off;study:on';
 onstudynoroi      = 'startup:off;epoch:off;continuous:off;study:on;roi:off';
 
-if ~strcmpi(onearg, 'nogui')
+if ~nouiflag
     W_MAIN = findobj('tag', 'EEGLAB');
     EEGUSERDAT = get(W_MAIN, 'userdata');
     set(W_MAIN, 'MenuBar', 'none');
@@ -953,40 +957,42 @@ end
 statusconnection = 1;
 eeglabVersionStatus = [];
 if isdeployed || (exist('ismcc') && ismcc)
-    disp('Loading plugins');
-    funcname = { ...
-                 @eegplugin_eepimport, ...
-                 @eegplugin_iclabel, ...
-                 @eegplugin_VisEd, ...
-                 @eegplugin_bids, ...
-                 @eegplugin_bva_io, ...
-                 @eegplugin_clean_rawdata, ...
-                 @eegplugin_dipfit, ...
-                 @eegplugin_egilegacy, ...
-                 @eegplugin_firfilt, ...
-                 @eegplugin_iirfilt, ...
-                 @eegplugin_musedirect, ...
-                 @eegplugin_musemonitor, ...
-                 @eegplugin_neuroscanio, ...
-                 @eegplugin_scd, ...
-                 @eegplugin_snapmaster, ...
-                 @eegplugin_xdfimport, ...
-                 @eegplugin_mffmatlabio, ...
-               };
-    for indf = 1:length(funcname)
-        pluginfun = funcname{indf};
-        pluginname = func2str(pluginfun);
-        try
-            outargs = nargout(pluginfun);
-            if outargs == 1
-                vers = feval(pluginfun, gcf, trystrs, catchstrs);
-                disp(['EEGLAB: adding "' vers '" plugin' ]);
-            else
-                feval(funcname{indf}, gcf, trystrs, catchstrs);
-                disp(['EEGLAB: adding plugin function "' pluginname '"' ]);
+    if ~nouiflag
+        disp('Loading plugins');
+        funcname = { ...
+                     @eegplugin_eepimport, ...
+                     @eegplugin_iclabel, ...
+                     @eegplugin_VisEd, ...
+                     @eegplugin_eegbids, ...
+                     @eegplugin_bva_io, ...
+                     @eegplugin_clean_rawdata, ...
+                     @eegplugin_dipfit, ...
+                     @eegplugin_egilegacy, ...
+                     @eegplugin_firfilt, ...
+                     @eegplugin_iirfilt, ...
+                     @eegplugin_musedirect, ...
+                     @eegplugin_musemonitor, ...
+                     @eegplugin_neuroscanio, ...
+                     @eegplugin_scd, ...
+                     @eegplugin_snapmaster, ...
+                     @eegplugin_xdfimport, ...
+                     @eegplugin_mffmatlabio, ...
+                   };
+        for indf = 1:length(funcname)
+            pluginfun = funcname{indf};
+            pluginname = func2str(pluginfun);
+            try
+                outargs = nargout(pluginfun);
+                if outargs == 1
+                    vers = feval(pluginfun, gcf, trystrs, catchstrs);
+                    disp(['EEGLAB: adding "' vers '" plugin' ]);
+                else
+                    feval(funcname{indf}, gcf, trystrs, catchstrs);
+                    disp(['EEGLAB: adding plugin function "' pluginname '"' ]);
+                end
+            catch e
+                disp(['EEGLAB: Could not load "' pluginname '": ' e.message]);
             end
-        catch e
-            disp(['EEGLAB: Could not load "' pluginname '": ' e.message]);
         end
     end
 else    
@@ -1019,14 +1025,12 @@ else
 	if option_checkversion && ismatlab
         disp('Retrieving plugin versions from server...');
         try
-            [pluginTmp, eeglabVersionStatus] = plugin_getweb('startup', pluginlist);
+            [pluginstats, eeglabVersionStatus] = plugin_getweb('startup', pluginlist);
         catch
             disp('Issue with retrieving statistics for extensions');
-            pluginTmp = [];
         end
-        if ~isempty(pluginTmp) && isfield(pluginTmp, 'name') && isfield(pluginTmp, 'version')
-            pluginstats.name    = { pluginTmp.name };
-            pluginstats.version = { pluginTmp.version };
+        if ~isfield(pluginstats, 'name') || ~isfield(pluginstats, 'version')
+            pluginstats = [];
         end
     end
     
@@ -1049,7 +1053,9 @@ else
                 
                 % special case of subfolder for Fieldtrip
                 % ---------------------------------------
-                if ~isempty(findstr(lower(dircontent(index).name), 'fieldtrip')) && isempty(findstr(lower(dircontent(index).name), 'rest'))
+                if ~isempty(findstr(lower(dircontent(index).name), 'bids-matlab-tools'))
+                    fprintf(2, 'Warning: The bids-matlab-tools plugin is obsolete, uninstall and install EEG-BIDS instead\n');
+                elseif ~isempty(findstr(lower(dircontent(index).name), 'fieldtrip')) && isempty(findstr(lower(dircontent(index).name), 'rest'))
                     addpathifnotexist( fullfile(dircontent(index).folder, dircontent(index).name, 'compat') , 'electrodenormalize' );
                     addpathifnotexist( fullfile(dircontent(index).folder, dircontent(index).name, 'forward'), 'ft_sourcedepth.m');
                     addpathifnotexist( fullfile(dircontent(index).folder, dircontent(index).name, 'utilities'), 'ft_datatype.m');
@@ -1102,14 +1108,10 @@ else
                 pluginlist(plugincount).version    = pluginVersion;
                 pluginlist(plugincount).foldername = dircontent(index).name;
                 pluginlist(plugincount).status     = 'ok';
-                if ~isempty(pluginstats)
-                    indPlugin = strmatch(lower(pluginlist(plugincount).plugin), lower(pluginstats.name), 'exact');
-                else
-                    indPlugin = [];
-                end
-                if length(indPlugin) == 1
-                    if ~strcmpi(pluginVersion, pluginstats.version{indPlugin})
-                        fprintf(2, ' - new version %s available\n', pluginstats.version{indPlugin});
+                indPlugin = strmatch(lower(pluginlist(plugincount).plugin), lower({ pluginstats.name }), 'exact');
+                if ~isempty(indPlugin)
+                    if ~strcmpi(pluginVersion, pluginstats(indPlugin).version)
+                        fprintf(2, ' - new version %s available\n', pluginstats(indPlugin).version);
                     else 
                         fprintf('\n');
                     end
@@ -1122,7 +1124,7 @@ else
                 pluginlist(plugincount).version    = pluginVersion;
                 vers2  = '';
                 status = 'ok';
-                if ~strcmpi(onearg, 'nogui')
+                if ~nouiflag
                     try
                         %eval( [ 'vers2 =' funcname '(gcf, trystrs, catchstrs);' ]);
                         vers2 = feval(funcname, gcf, trystrs, catchstrs);
@@ -1155,15 +1157,28 @@ else
                     fprintf('EEGLAB: adding "%s" v%s (see >> help %s)', ...
                         pluginlist(plugincount).plugin, vers, funcname);
                     if ~isempty(pluginstats)
-                        indPlugin = strmatch(lower(pluginlist(plugincount).plugin), lower(pluginstats.name), 'exact');
+                        indPlugin = strmatch(lower(pluginlist(plugincount).plugin), lower({ pluginstats.name }), 'exact');
                         if length(indPlugin) == 1
-                            if ~strcmpi(vers, pluginstats.version{indPlugin})
-                                fprintf(2, ' - new version %s available\n', pluginstats.version{indPlugin});
-                            else fprintf('\n');
+                            if ~isempty(pluginstats(indPlugin).custommsg)
+                                if length(pluginstats(indPlugin).custommsg) > 50
+                                    fprintf(2, ' - %s...\n', pluginstats(indPlugin).custommsg(1:50));
+                                else
+                                    fprintf(2, ' - %s\n', pluginstats(indPlugin).custommsg);
+                                end
+                            elseif ~strcmpi(vers, pluginstats(indPlugin).version)
+                                if isequal(pluginstats(indPlugin).critical, 1)
+                                   fprintf(2, ' - new version %s available (critical bug fix)\n', pluginstats(indPlugin).version);
+                                else
+                                   fprintf(2, ' - new version %s available\n', pluginstats(indPlugin).version);
+                                end
+                            else
+                                fprintf('\n');
                             end
-                        else fprintf('\n');
+                        else
+                            fprintf('\n');
                         end
-                    else fprintf('\n');
+                    else
+                        fprintf('\n');
                     end
                 end
                 pluginlist(plugincount).status       = status;
@@ -1176,7 +1191,7 @@ else
     
     % add menus for plugins to install
     % --------------------------------
-    if ismatlab && ~strcmpi(onearg, 'nogui')
+    if ismatlab && ~nouiflag
         if ~exist('mff_import', 'file')
             neuro_m = findobj(W_MAIN, 'tag', 'import data');
             cb_mff = [ 'if ~plugin_askinstall(''mffmatlabio'', ''mff_import''), return; end;' ...
@@ -1230,7 +1245,13 @@ if ~strcmp(dipplotpath,dipfitpath)
     addpath(dipfitpath,'-begin');
 end
 
-if strcmpi(onearg, 'nogui')
+if exist(onearg, 'file') % execute script
+    pop_runscript(onearg);
+elseif any(onearg == ';') % execute code if there is a semicolumn in the argument
+    evalin('base', onearg);
+end
+
+if nouiflag
     return;
 end
 
@@ -1251,6 +1272,16 @@ eventsub_m  = findobj('parent', event_m);
 editsub_m   = findobj('parent', edit_m);
 exportsub_m = findobj('parent', exportm);
 filter_m    = findobj('parent', filter_m);
+
+% check if ERPLAB overloads icadefs
+% --------------------------
+icadefsPath = fileparts(which('icadefs'));
+if ~isempty(findstr('erplab', lower(icadefsPath)))
+    rmpath(icadefsPath);
+    if isempty(which('icadefs'))
+        addpath(icadefsPath);
+    end
+end
 
 icadefs; % containing PLUGINMENUCOLOR
 if versL, tm = 14; else tm = 16; end
@@ -1275,10 +1306,6 @@ if ismatlab
     eeglab_update(eeglabVersionStatus);
 end
 
-if isdeployed && ~exist(onearg, 'file')
-    pop_runscript(onearg);
-end
-
 % REMOVED MENUS
 	%eegmenu( false,  tools_m, 'Label', 'Automatic comp. reject',  'enable', 'off', 'CallBack', '[EEG LASTCOM] = pop_rejcomp(EEG); eegh(LASTCOM); if ~isempty(LASTCOM), eeg_store(CURRENTSET); end;');
 	%eegmenu( false,  tools_m, 'Label', 'Reject (synthesis)' , 'Separator', 'on', 'CallBack', '[EEG LASTCOM] = pop_rejall(EEG); eegh(LASTCOM); if ~isempty(LASTCOM), eeg_store; end; eeglab(''redraw'');');
@@ -1288,7 +1315,7 @@ end
 % draw the main figure
 % --------------------
 
-function eeg_mainfig(onearg);
+function eeg_mainfig(onearg)
 
 icadefs;
 COLOR = BACKEEGLABCOLOR;
@@ -1597,16 +1624,30 @@ if exist_study
                   'if ~isempty(LASTCOM), CURRENTSTUDY = 1; LASTCOM = [ LASTCOM ''CURRENTSTUDY = 1;'' ]; end;' ...
                   'eegh(LASTCOM);' ...
                   'eeglab(''redraw'');' ];
-    if length(EEGMENU) > 1 && isequal( EEGMENU(end).Text, 'Select the study set')
-        delete(EEGMENU(end)); % in case it is not at the end
-        EEGMENU(end) = [];
+    if length(EEGMENU) > 1 
+        if isnumeric(EEGMENU) 
+            if isequal( get(EEGMENU(end), 'text'), 'Select the study set')
+                delete(EEGMENU(end)); % in case it is not at the end
+                EEGMENU(end) = [];
+            end
+        elseif isequal( EEGMENU(end).Text, 'Select the study set')
+            delete(EEGMENU(end)); % in case it is not at the end
+            EEGMENU(end) = [];
+        end
     end
     EEGMENU(end+1) = eegmenu( false,  set_m, 'Label', 'Select the study set', 'Enable', 'on', 'userdata', 'study:on');
     set(EEGMENU(end), 'enable', 'on', 'callback', cb_select, 'separator', 'on');        
 else 
-    if length(EEGMENU) > 1 && isequal( EEGMENU(end).Text, 'Select the study set')
-        delete(EEGMENU(end)); % in case it is not at the end
-        EEGMENU(end) = [];
+    if length(EEGMENU) > 1
+        if isnumeric(EEGMENU) 
+            if isequal( get(EEGMENU(end), 'text'), 'Select the study set')
+                delete(EEGMENU(end)); % in case it is not at the end
+                EEGMENU(end) = [];
+            end
+        elseif isequal( EEGMENU(end).Text, 'Select the study set')
+            delete(EEGMENU(end)); % in case it is not at the end
+            EEGMENU(end) = [];
+        end
     end
 end
 
