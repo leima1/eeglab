@@ -343,9 +343,6 @@ elseif length(ALLEEG) > 1 && strcmpi(g.concatcond, 'on')
             alltags(allinds) = 1;
         end
     end
-    fprintf('CHECK if concatenation is correct. Press any key to continue.\n');
-    pause
-    
     fprintf('**************************\nNOW RUNNING ALL DECOMPOSITIONS\n****************************\n');
     eeglab_options;
     if option_parallel
@@ -387,12 +384,12 @@ else
         EEG = pop_mergeset(EEG, 1:length(EEG));
     else
         disp('Concatenating datasets...');
-        totalpnts = 0;
         EEG = ALLEEG(g.dataset(1));
         
         cpnts = 1;
         % compute total data size
         % -----------------------
+        totalpnts = 0;
         for i = g.dataset
             totalpnts = totalpnts+ALLEEG(g.dataset(i)).pnts*ALLEEG(g.dataset(i)).trials;
         end
@@ -545,7 +542,7 @@ switch lower(g.icatype)
                 error('You must install the AMICA plugin first to use AMICA');
              end
          end
-         EEG = pop_runamica(EEG, g.options{:}, 'pcakeep', EEG.nbchan-1); % force runamica to run on reduce rank from avalible channels
+         EEG = pop_runamica(EEG, g.options{:});
      case 'picard' 
          if ~exist('picard')
              if nargin < 2

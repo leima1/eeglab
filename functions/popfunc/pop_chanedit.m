@@ -683,7 +683,7 @@ else
                     num=num+1; 
                     currentpos = currentpos+1; 
                 end
-                chans(end+1).label = '';
+                chans(end+1).labels = '';
                 tmpChan = chans(end);
                 chans(num+1:end) = chans(num:end-1);
                 chans(num) = tmpChan;
