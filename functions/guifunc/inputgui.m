@@ -45,7 +45,7 @@
 %                edit box, radio button, checkbox and listbox.
 %   userdat    - 'userdata' value of the figure.
 %   strhalt    - the function returns when the 'userdata' field of the
-%                button with the tag 'ok' is modified. This returns the
+%                button with the tag for OK button is modified. This returns the
 %                new value of this field.
 %   outstruct  - returns outputs as a structure (only tagged ui controls
 %                are considered). The field name of the structure is
@@ -206,7 +206,7 @@ if isempty(g.getresult)
         end
     else 
         fig = g.mode;
-        set(findobj('parent', fig, 'tag', g.okbut), 'userdata', []);
+        set(findobj('parent', fig, 'tag', 'ok'), 'userdata', []);
         allobj = findobj('parent',fig);
         allobj = allobj(end:-1:1);
     end
@@ -240,7 +240,7 @@ if ~(ishandle(fig)), return; end % Check if figure still exist
  
 % output parameters
 % -----------------
-strhalt = get(findobj('parent', fig, 'tag', g.okbut), 'userdata');
+strhalt = get(findobj('parent', fig, 'tag', 'ok'), 'userdata');
 [resstruct,result] = outstruct(allobj); % Output parameters  
 userdat = get(fig, 'userdata');
 
@@ -278,7 +278,7 @@ for index=1:length(allobj)
             switch lower( objstyle )
                 case { 'listbox', 'checkbox', 'radiobutton' 'popupmenu' 'radio' }
                     resultout{counter} = get( currentobj, 'value');
-                    if ~isempty(get(currentobj, 'tag')), 
+                    if ~isempty(get(currentobj, 'tag'))
                         try
                             resstructout = setfield(resstructout, get(currentobj, 'tag'), resultout{counter}); 
                         catch
@@ -288,7 +288,7 @@ for index=1:length(allobj)
                     counter = counter+1;
                 case 'edit'
                     resultout{counter} = get( currentobj, 'string');
-                    if ~isempty(get(currentobj, 'tag')), 
+                    if ~isempty(get(currentobj, 'tag'))
                         try
                             resstructout = setfield(resstructout, get(currentobj, 'tag'), resultout{counter});                         
                         catch

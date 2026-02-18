@@ -200,6 +200,10 @@ if length(EEG) > 1
     return;
 end
 
+if ischar(types)
+    types = { types };
+end
+
 % create structure
 % ----------------
 if ~isempty(args)

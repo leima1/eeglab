@@ -107,6 +107,10 @@ if isfield(chans, 'data')
     end
     chanedit = chans;
     complicated = true;
+
+    if isfield(tmpEEG, 'urchanlocs') && isempty(tmpEEG.urchanlocs) && isfield(chans, 'urchan')
+        chanedit = rmfield(chanedit, 'urchan');
+    end
 else
     if ~isfield(chans, 'datachan')
         [chanedit,dummy,complicated] = insertchans(chans, chaninfo);
@@ -147,13 +151,15 @@ check_newfields = true; %length(fieldnames(chanedit)) < length(fields);
 if ~isempty(chanedit)
     for index = 1:length(fields)
         if check_newfields && ~isfield(chanedit, fields{index})
-            % new field
-            % ---------
-            if strcmpi(fieldtype{index}, 'num')
-                chanedit = setfield(chanedit, {1}, fields{index}, []);
-            else
-                for indchan = 1:length(chanedit)
-                    chanedit = setfield(chanedit, {indchan}, fields{index}, '');
+            if ~isequal(fields{index}, 'urchan')
+                % new field
+                % ---------
+                if strcmpi(fieldtype{index}, 'num')
+                    chanedit = setfield(chanedit, {1}, fields{index}, []);
+                else
+                    for indchan = 1:length(chanedit)
+                        chanedit = setfield(chanedit, {indchan}, fields{index}, '');
+                    end
                 end
             end
         else
@@ -168,7 +174,14 @@ if ~isempty(chanedit)
             end
             if strcmpi(fieldtype{index}, 'num')
                 if ~all(cellfun('isclass',allvals,'double'))
-                    numok = cellfun(@isnumeric, allvals);
+                    nomconvert = cellfun(@isinteger, allvals);
+                    if any(nomconvert)
+                        for indConvert = find(nomconvert)
+                            chanedit = setfield(chanedit, {indConvert}, fields{index}, double(allvals{indConvert}));
+                        end
+                    end
+                    allvals = {chanedit.(fields{index})};
+                    numok = cellfun(@isfloat, allvals);
                     if any(numok == 0)
                         for indConvert = find(numok == 0)
                             chanedit = setfield(chanedit, {indConvert}, fields{index}, []);
@@ -214,7 +227,28 @@ if isfield(chanedit, 'labels')
             [chanedit.labels] = deal(tmp{:});
         end
     end
+    if strfind([chanedit.labels], 'RDA_')  % `contains() is not back compatible
+        chanprefixes = { 'BrainVision RDA_' 'RDA_' }; % order matters
+        tmp = {chanedit.labels};
+        disp('Detected/removing prefix from channel labels')
+        for idx = 1:length(chanprefixes)
+            tmp = strrep(tmp, chanprefixes(idx), '');
+        end
+        [chanedit.labels] = deal(tmp{:});
+    end
         
+    % remove simple quotes or double quotes from channel labels
+    if sum(chanedit(1).labels == '''') == 2
+        tmp = {chanedit.labels};
+        tmp = strrep(tmp, '''', '');
+        [chanedit.labels] = deal(tmp{:});
+    end
+    if sum(chanedit(1).labels == '"') == 2
+        tmp = {chanedit.labels};
+        tmp = strrep(tmp, '"', '');
+        [chanedit.labels] = deal(tmp{:});
+    end
+
     % duplicate labels?
     tmp = sort({chanedit.labels});
     if any(strcmp(tmp(1:end-1),tmp(2:end)))

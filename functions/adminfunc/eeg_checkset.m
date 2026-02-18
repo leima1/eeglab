@@ -377,301 +377,302 @@ for inddataset = 1:length(ALLEEG)
                         end
                     end
                 case 'eventconsistency',
-                    [EEG res] = eeg_checkset(EEG);
-                    if isempty(EEG.event), return; end
-                    
-                    % check events (slow)
-                    % ------------
-                    if isfield(EEG.event, 'type')
-                        eventInds = arrayfun(@(x)isempty(x.type), EEG.event);
-                        if any(eventInds)
-                            eventInds = find(eventInds);
-                            eventInds = eventInds(:)'; % make row vector
-                            if all(arrayfun(@(x)isnumeric(x.type), EEG.event))
-                                 for ind = eventInds, EEG.event(ind).type = NaN; end
-                            else for ind = eventInds, EEG.event(ind).type = 'empty'; end
-                            end
-                        end
-                        if ~all(arrayfun(@(x)ischar(x.type), EEG.event)) && ~all(arrayfun(@(x)isnumeric(x.type), EEG.event))
-                            disp('Warning: converting all event types to strings');
-                            for ind = 1:length(EEG.event)
-                                EEG.event(ind).type = num2str(EEG.event(ind).type);
-                            end
-                            EEG = eeg_checkset(EEG, 'eventconsistency');
-                        end
-                            
-                    end
-                    
-                    % Removing events with NaN latency
-                    % --------------------------------
-                    if isfield(EEG.event, 'latency')
-                        nanindex = find(isnan([ EEG.event.latency ]));
-                        if ~isempty(nanindex)
-                            EEG.event(nanindex) = [];
-                            trialtext = '';
-                             for inan = 1:length(nanindex)
-                                 trialstext = [trialtext ' ' num2str(nanindex(inan))];
-                             end
-                            disp(sprintf(['eeg_checkset: Event(s) with NaN latency were deleted \nDeleted event index(es):[' trialstext ']']));
-                        end  
-                    end
-                    
-                    % remove the events which latency are out of boundary
-                    % ---------------------------------------------------
-                    if isempty(EEG.event), return; end
-                    if isfield(EEG.event, 'latency')
+                    %[EEG res] = eeg_checkset(EEG);
+                    if ~isempty(EEG.event)
+                        
+                        % check events (slow)
+                        % ------------
                         if isfield(EEG.event, 'type')
-                            if eeg_isboundary(EEG.event(1)) && isfield(EEG.event, 'duration')
-                                if EEG.event(1).duration < 1
-                                    EEG.event(1) = [];
-                                elseif EEG.event(1).latency > 0 && EEG.event(1).latency < 1
+                            eventInds = arrayfun(@(x)isempty(x.type), EEG.event);
+                            if any(eventInds)
+                                eventInds = find(eventInds);
+                                eventInds = eventInds(:)'; % make row vector
+                                if all(arrayfun(@(x)isnumeric(x.type), EEG.event))
+                                     for ind = eventInds, EEG.event(ind).type = NaN; end
+                                else for ind = eventInds, EEG.event(ind).type = 'empty'; end
+                                end
+                            end
+                            if ~all(arrayfun(@(x)ischar(x.type), EEG.event)) && ~all(arrayfun(@(x)isnumeric(x.type), EEG.event))
+                                disp('Warning: converting all event types to strings');
+                                for ind = 1:length(EEG.event)
+                                    EEG.event(ind).type = num2str(EEG.event(ind).type);
+                                end
+                                EEG = eeg_checkset(EEG, 'eventconsistency');
+                            end
+                                
+                        end
+                        
+                        % Removing events with NaN latency
+                        % --------------------------------
+                        if isfield(EEG.event, 'latency')
+                            nanindex = find(isnan([ EEG.event.latency ]));
+                            if ~isempty(nanindex)
+                                EEG.event(nanindex) = [];
+                                trialtext = '';
+                                 for inan = 1:length(nanindex)
+                                     trialstext = [trialtext ' ' num2str(nanindex(inan))];
+                                 end
+                                disp(sprintf(['eeg_checkset: Event(s) with NaN latency were deleted \nDeleted event index(es):[' trialstext ']']));
+                            end  
+                        end
+                        
+                        % remove the events which latency are out of boundary
+                        % ---------------------------------------------------
+                        if isempty(EEG.event), return; end
+                        if isfield(EEG.event, 'latency')
+                            if isfield(EEG.event, 'type')
+                                if eeg_isboundary(EEG.event(1)) && isfield(EEG.event, 'duration')
+                                    if EEG.event(1).duration < 1
+                                        EEG.event(1) = [];
+                                    elseif EEG.event(1).latency > 0 && EEG.event(1).latency < 1
+                                        EEG.event(1).latency = 0.5;
+                                    end
+                                end
+                            end
+                            
+                            try
+                                tmpevent = EEG.event;
+                                alllatencies = [tmpevent.latency];
+                            catch
+                                error('Checkset: error empty latency entry for new events added by user');
+                            end
+                            I1 = find(alllatencies < 0.5);
+                            I2 = find(alllatencies > EEG.pnts*EEG.trials+1); % The addition of 1 was included
+                            % because, if data epochs are extracted from -1 to
+                            % time 0, this allow to include the last event in
+                            % the last epoch (otherwise all epochs have an
+                            % event except the last one
+                            if (length(I1) + length(I2)) > 0
+                                fprintf('eeg_checkset warning: %d/%d events had out-of-bounds latencies and were removed\n', ...
+                                    length(I1) + length(I2), length(EEG.event));
+                                EEG.event(union(I1, I2)) = [];
+                            end
+                        end
+                        if isempty(EEG.event), return; end
+                        
+                        % save information for non latency fields updates
+                        % -----------------------------------------------
+                        difffield = [];
+                        if ~isempty(EEG.event) && isfield(EEG.event, 'epoch')
+                            % remove fields with empty epochs
+                            % -------------------------------
+                            removeevent = [];
+                            try
+                                tmpevent = EEG.event; 
+                                allepochs = [ tmpevent.epoch ];
+                                removeevent = find( allepochs < 1 | allepochs > EEG.trials);
+                                if ~isempty(removeevent)
+                                    disp([ 'eeg_checkset warning: ' int2str(length(removeevent)) ' event had invalid epoch numbers and were removed']);
+                                end
+                            catch
+                                for indexevent = 1:length(EEG.event)
+                                    if isempty( EEG.event(indexevent).epoch ) || ~isnumeric(EEG.event(indexevent).epoch) ...
+                                            || EEG.event(indexevent).epoch < 1 || EEG.event(indexevent).epoch > EEG.trials
+                                        removeevent = [removeevent indexevent];
+                                        disp([ 'eeg_checkset warning: event ' int2str(indexevent) ' has an invalid epoch number: removed']);
+                                    end
+                                end
+                            end
+                            EEG.event(removeevent) = [];
+                        end
+                        if isempty(EEG.event), return; end
+                        
+                        % Duration set to 0 if empty
+                        % --------------------------
+                        if isfield(EEG.event, 'duration')
+                            emptyDur = cellfun(@isempty, { EEG.event.duration });
+                            if any(emptyDur)
+                                for indexevent = find(emptyDur)
+                                    EEG.event(indexevent).duration = 0;
+                                end
+                            end
+                        end
+                        
+                        % uniformize fields (str or int) if necessary
+                        % -------------------------------------------
+                        fnames = fieldnames(EEG.event);
+                        for fidx = 1:length(fnames)
+                            fname = fnames{fidx};
+                            if ~strcmpi(fname, 'mffkeys') && ~strcmpi(fname, 'mffkeysbackup')
+                                tmpevent  = EEG.event;
+                                allvalues = { tmpevent.(fname) };
+                                try
+                                    % find indices of numeric values among values of this event property
+                                    valreal = ~cellfun('isclass', allvalues, 'char');
+                                catch
+                                    valreal = mycellfun('isclass', allvalues, 'double');
+                                end
+                                
+                                format = 'ok';
+                                if ~all(valreal) % all valreal ok
+                                    format = 'str';
+                                    if all(valreal == 0) % all valreal=0 ok
+                                        format = 'ok';
+                                    end
+                                end
+                                if strcmp(format, 'str')
+                                    fprintf('eeg_checkset note: event field format ''%s'' made uniform\n', fname);
+                                    allvalues = cellfun(@num2str, allvalues, 'uniformoutput', false);
+                                    [EEG.event(valreal).(fname)] = deal(allvalues{find(valreal)});
+                                end
+                            end
+                        end
+                        
+                        % check boundary events
+                        % ---------------------
+                        tmpevent = EEG.event;
+                        if isfield(tmpevent, 'type') && ~isnumeric(tmpevent(1).type)
+                            boundsInd = eeg_findboundaries(EEG);
+                            if ~isempty(boundsInd)
+                                bounds = [ tmpevent(boundsInd).latency ];
+                                % remove last event if necessary
+                                if EEG.trials==1 %this if block added by James Desjardins (Jan 13th, 2014)
+                                    if round(bounds(end)-0.5) > size(EEG.data,2), EEG.event(boundsInd(end)) = []; bounds(end) = []; end; % remove final boundary if any
+                                end
+                                % The first boundary below need to be kept for
+                                % urevent latency calculation
+                                % if bounds(1) < 0, EEG.event(bounds(1))   = []; end; % remove initial boundary if any
+                                indDoublet = find(bounds(2:end)-bounds(1:end-1)==0);
+                                if ~isempty(indDoublet)
+                                    disp('Warning: duplicate boundary event removed');
+                                    if isfield(EEG.event, 'duration')
+                                        for indBound = 1:length(indDoublet)
+                                            EEG.event(boundsInd(indDoublet(indBound)+1)).duration = EEG.event(boundsInd(indDoublet(indBound)+1)).duration+EEG.event(boundsInd(indDoublet(indBound))).duration;
+                                        end
+                                    end
+                                    EEG.event(boundsInd(indDoublet)) = [];
+                                end
+                            end
+                        end
+                        if isempty(EEG.event), return; end
+                        
+                        % check that numeric format is double (Matlab 7)
+                        % -----------------------------------
+                        allfields = fieldnames(EEG.event);
+                        if ~isempty(EEG.event)
+                            for index = 1:length(allfields)
+                                tmpval = EEG.event(1).(allfields{index});
+                                if isnumeric(tmpval) && ~isa(tmpval, 'double')
+                                    for indexevent = 1:length(EEG.event)
+                                        tmpval  =   getfield(EEG.event, { indexevent }, allfields{index} );
+                                        EEG.event = setfield(EEG.event, { indexevent }, allfields{index}, double(tmpval));
+                                    end
+                                end
+                            end
+                        end
+                        
+                        % check duration field, replace empty by 0
+                        % ----------------------------------------
+                        if isfield(EEG.event, 'duration')
+                            tmpevent = EEG.event;
+                            try
+                                valempt = cellfun('isempty'  , { tmpevent.duration });
+                            catch
+                                valempt = mycellfun('isempty', { tmpevent.duration });
+                            end
+                            if any(valempt)
+                                for index = find(valempt)
+                                    EEG.event(index).duration = 0;
+                                end
+                            end
+                        end
+                        
+                        % resort events
+                        % -------------
+                        if isfield(EEG.event, 'latency')
+                            try
+                                if isfield(EEG.event, 'epoch')
+                                    TMPEEG = pop_editeventvals(EEG, 'sort', { 'epoch' 0 'latency' 0 });
+                                else
+                                    TMPEEG = pop_editeventvals(EEG, 'sort', { 'latency' 0 });
+                                end
+                                if ~isequal(TMPEEG.event, EEG.event)
+                                    EEG = TMPEEG;
+                                    disp('eeg_checkset note: events'' order (re)sorted by time');
+                                end
+                            catch
+                                disp('eeg_checkset: problem when attempting to resort event latencies.');
+                            end
+                        end
+                        
+                        % check latency of first event
+                        % ----------------------------
+                        if ~isempty(EEG.event)
+                            if isfield(EEG.event, 'latency')
+                                if EEG.event(1).latency < 0.5
                                     EEG.event(1).latency = 0.5;
                                 end
                             end
                         end
                         
-                        try
-                            tmpevent = EEG.event;
-                            alllatencies = [tmpevent.latency];
-                        catch
-                            error('Checkset: error empty latency entry for new events added by user');
-                        end
-                        I1 = find(alllatencies < 0.5);
-                        I2 = find(alllatencies > EEG.pnts*EEG.trials+1); % The addition of 1 was included
-                        % because, if data epochs are extracted from -1 to
-                        % time 0, this allow to include the last event in
-                        % the last epoch (otherwise all epochs have an
-                        % event except the last one
-                        if (length(I1) + length(I2)) > 0
-                            fprintf('eeg_checkset warning: %d/%d events had out-of-bounds latencies and were removed\n', ...
-                                length(I1) + length(I2), length(EEG.event));
-                            EEG.event(union(I1, I2)) = [];
-                        end
-                    end
-                    if isempty(EEG.event), return; end
-                    
-                    % save information for non latency fields updates
-                    % -----------------------------------------------
-                    difffield = [];
-                    if ~isempty(EEG.event) && isfield(EEG.event, 'epoch')
-                        % remove fields with empty epochs
-                        % -------------------------------
-                        removeevent = [];
-                        try
-                            tmpevent = EEG.event; 
-                            allepochs = [ tmpevent.epoch ];
-                            removeevent = find( allepochs < 1 | allepochs > EEG.trials);
-                            if ~isempty(removeevent)
-                                disp([ 'eeg_checkset warning: ' int2str(length(removeevent)) ' event had invalid epoch numbers and were removed']);
-                            end
-                        catch
-                            for indexevent = 1:length(EEG.event)
-                                if isempty( EEG.event(indexevent).epoch ) || ~isnumeric(EEG.event(indexevent).epoch) ...
-                                        || EEG.event(indexevent).epoch < 1 || EEG.event(indexevent).epoch > EEG.trials
-                                    removeevent = [removeevent indexevent];
-                                    disp([ 'eeg_checkset warning: event ' int2str(indexevent) ' has an invalid epoch number: removed']);
-                                end
-                            end
-                        end
-                        EEG.event(removeevent) = [];
-                    end
-                    if isempty(EEG.event), return; end
-                    
-                    % Duration set to 0 if empty
-                    % --------------------------
-                    if isfield(EEG.event, 'duration')
-                        emptyDur = cellfun(@isempty, { EEG.event.duration });
-                        if any(emptyDur)
-                            for indexevent = find(emptyDur)
-                                EEG.event(indexevent).duration = 0;
-                            end
-                        end
-                    end
-                    
-                    % uniformize fields (str or int) if necessary
-                    % -------------------------------------------
-                    fnames = fieldnames(EEG.event);
-                    for fidx = 1:length(fnames)
-                        fname = fnames{fidx};
-                        if ~strcmpi(fname, 'mffkeys') && ~strcmpi(fname, 'mffkeysbackup')
-                            tmpevent  = EEG.event;
-                            allvalues = { tmpevent.(fname) };
-                            try
-                                % find indices of numeric values among values of this event property
-                                valreal = ~cellfun('isclass', allvalues, 'char');
-                            catch
-                                valreal = mycellfun('isclass', allvalues, 'double');
-                            end
-                            
-                            format = 'ok';
-                            if ~all(valreal) % all valreal ok
-                                format = 'str';
-                                if all(valreal == 0) % all valreal=0 ok
-                                    format = 'ok';
-                                end
-                            end
-                            if strcmp(format, 'str')
-                                fprintf('eeg_checkset note: event field format ''%s'' made uniform\n', fname);
-                                allvalues = cellfun(@num2str, allvalues, 'uniformoutput', false);
-                                [EEG.event(valreal).(fname)] = deal(allvalues{find(valreal)});
-                            end
-                        end
-                    end
-                    
-                    % check boundary events
-                    % ---------------------
-                    tmpevent = EEG.event;
-                    if isfield(tmpevent, 'type') && ~isnumeric(tmpevent(1).type)
-                        boundsInd = eeg_findboundaries(EEG);
-                        if ~isempty(boundsInd)
-                            bounds = [ tmpevent(boundsInd).latency ];
-                            % remove last event if necessary
-                            if EEG.trials==1 %this if block added by James Desjardins (Jan 13th, 2014)
-                                if round(bounds(end)-0.5) > size(EEG.data,2), EEG.event(boundsInd(end)) = []; bounds(end) = []; end; % remove final boundary if any
-                            end
-                            % The first boundary below need to be kept for
-                            % urevent latency calculation
-                            % if bounds(1) < 0, EEG.event(bounds(1))   = []; end; % remove initial boundary if any
-                            indDoublet = find(bounds(2:end)-bounds(1:end-1)==0);
-                            if ~isempty(indDoublet)
-                                disp('Warning: duplicate boundary event removed');
-                                if isfield(EEG.event, 'duration')
-                                    for indBound = 1:length(indDoublet)
-                                        EEG.event(boundsInd(indDoublet(indBound)+1)).duration = EEG.event(boundsInd(indDoublet(indBound)+1)).duration+EEG.event(boundsInd(indDoublet(indBound))).duration;
-                                    end
-                                end
-                                EEG.event(boundsInd(indDoublet)) = [];
-                            end
-                        end
-                    end
-                    if isempty(EEG.event), return; end
-                    
-                    % check that numeric format is double (Matlab 7)
-                    % -----------------------------------
-                    allfields = fieldnames(EEG.event);
-                    if ~isempty(EEG.event)
-                        for index = 1:length(allfields)
-                            tmpval = EEG.event(1).(allfields{index});
-                            if isnumeric(tmpval) && ~isa(tmpval, 'double')
-                                for indexevent = 1:length(EEG.event)
-                                    tmpval  =   getfield(EEG.event, { indexevent }, allfields{index} );
-                                    EEG.event = setfield(EEG.event, { indexevent }, allfields{index}, double(tmpval));
-                                end
-                            end
-                        end
-                    end
-                    
-                    % check duration field, replace empty by 0
-                    % ----------------------------------------
-                    if isfield(EEG.event, 'duration')
-                        tmpevent = EEG.event;
-                        try
-                            valempt = cellfun('isempty'  , { tmpevent.duration });
-                        catch
-                            valempt = mycellfun('isempty', { tmpevent.duration });
-                        end
-                        if any(valempt)
-                            for index = find(valempt)
-                                EEG.event(index).duration = 0;
-                            end
-                        end
-                    end
-                    
-                    % resort events
-                    % -------------
-                    if isfield(EEG.event, 'latency')
-                        try
-                            if isfield(EEG.event, 'epoch')
-                                TMPEEG = pop_editeventvals(EEG, 'sort', { 'epoch' 0 'latency' 0 });
-                            else
-                                TMPEEG = pop_editeventvals(EEG, 'sort', { 'latency' 0 });
-                            end
-                            if ~isequal(TMPEEG.event, EEG.event)
-                                EEG = TMPEEG;
-                                disp('eeg_checkset note: events'' order (re)sorted by time');
-                            end
-                        catch
-                            disp('eeg_checkset: problem when attempting to resort event latencies.');
-                        end
-                    end
-                    
-                    % check latency of first event
-                    % ----------------------------
-                    if ~isempty(EEG.event)
-                        if isfield(EEG.event, 'latency')
-                            if EEG.event(1).latency < 0.5
-                                EEG.event(1).latency = 0.5;
-                            end
-                        end
-                    end
-                    
-                    % build epoch structure
-                    % ---------------------
-                    try,
-                        if EEG.trials > 1 && ~isempty(EEG.event)
-                            % erase existing event-related fields
-                            % ------------------------------
-                            if ~isfield(EEG,'epoch')
-                                EEG.epoch = [];
-                            end
-                            if ~isempty(EEG.epoch)
-                                if length(EEG.epoch) ~= EEG.trials
-                                    disp('Warning: number of epoch entries does not match number of dataset trials;');
-                                    disp('         user-defined epoch entries will be erased.');
+                        % build epoch structure
+                        % ---------------------
+                        try,
+                            if EEG.trials > 1 && ~isempty(EEG.event)
+                                % erase existing event-related fields
+                                % ------------------------------
+                                if ~isfield(EEG,'epoch')
                                     EEG.epoch = [];
-                                else
-                                    fn = fieldnames(EEG.epoch);
-                                    EEG.epoch = rmfield(EEG.epoch,fn(strncmp('event',fn,5)));
                                 end
-                            end
-
-                            % set event field
-                            % ---------------
-                            tmpevent   = EEG.event;
-                            eventepoch = [tmpevent.epoch];
-                            epochevent = cell(1,EEG.trials);
-                            destdata = epochevent;
-                            EEG.epoch(length(epochevent)).event = [];
-                            for k=1:length(epochevent)
-                                epochevent{k} = find(eventepoch==k);
-                            end
-                            tmpepoch = EEG.epoch;
-                            [tmpepoch.event] = epochevent{:};
-                            EEG.epoch = tmpepoch;
-                            maxlen = max(cellfun(@length,epochevent));
-
-                            % copy event information into the epoch array
-                            % -------------------------------------------
-                            eventfields = fieldnames(EEG.event)';
-                            eventfields = eventfields(~strcmp(eventfields,'epoch'));
-                            tmpevent    = EEG.event;
-                            for k = 1:length(eventfields)
-                                fname = eventfields{k};
-                                switch fname
-                                    case 'latency'
-                                        sourcedata = round(eeg_point2lat([tmpevent.(fname)],[tmpevent.epoch],EEG.srate, [EEG.xmin EEG.xmax]*1000, 1E-3) * 10^8 )/10^8;
-                                        sourcedata = num2cell(sourcedata);
-                                    case 'duration'
-                                        sourcedata = num2cell([tmpevent.(fname)]/EEG.srate*1000);
-                                    otherwise
-                                        sourcedata = {tmpevent.(fname)};
-                                end
-                                if maxlen == 1
-                                    destdata = cell(1,length(epochevent));
-                                    destdata(~cellfun('isempty',epochevent)) = sourcedata([epochevent{:}]);
-                                else
-                                    for l=1:length(epochevent)
-                                        destdata{l} = sourcedata(epochevent{l});
+                                if ~isempty(EEG.epoch)
+                                    if length(EEG.epoch) ~= EEG.trials
+                                        disp('Warning: number of epoch entries does not match number of dataset trials;');
+                                        disp('         user-defined epoch entries will be erased.');
+                                        EEG.epoch = [];
+                                    else
+                                        fn = fieldnames(EEG.epoch);
+                                        EEG.epoch = rmfield(EEG.epoch,fn(strncmp('event',fn,5)));
                                     end
+                                end
+    
+                                % set event field
+                                % ---------------
+                                tmpevent   = EEG.event;
+                                eventepoch = [tmpevent.epoch];
+                                epochevent = cell(1,EEG.trials);
+                                destdata = epochevent;
+                                EEG.epoch(length(epochevent)).event = [];
+                                for k=1:length(epochevent)
+                                    epochevent{k} = find(eventepoch==k);
                                 end
                                 tmpepoch = EEG.epoch;
-                                [tmpepoch.(['event' fname])] = destdata{:};
+                                [tmpepoch.event] = epochevent{:};
                                 EEG.epoch = tmpepoch;
+                                maxlen = max(cellfun(@length,epochevent));
+    
+                                % copy event information into the epoch array
+                                % -------------------------------------------
+                                eventfields = fieldnames(EEG.event)';
+                                eventfields = eventfields(~strcmp(eventfields,'epoch'));
+                                tmpevent    = EEG.event;
+                                for k = 1:length(eventfields)
+                                    fname = eventfields{k};
+                                    switch fname
+                                        case 'latency'
+                                            sourcedata = round(eeg_point2lat([tmpevent.(fname)],[tmpevent.epoch],EEG.srate, [EEG.xmin EEG.xmax]*1000, 1E-3) * 10^8 )/10^8;
+                                            sourcedata = num2cell(sourcedata);
+                                        case 'duration'
+                                            sourcedata = num2cell([tmpevent.(fname)]/EEG.srate*1000);
+                                        otherwise
+                                            sourcedata = {tmpevent.(fname)};
+                                    end
+                                    if maxlen == 1
+                                        destdata = cell(1,length(epochevent));
+                                        destdata(~cellfun('isempty',epochevent)) = sourcedata([epochevent{:}]);
+                                    else
+                                        for l=1:length(epochevent)
+                                            destdata{l} = sourcedata(epochevent{l});
+                                        end
+                                    end
+                                    tmpepoch = EEG.epoch;
+                                    [tmpepoch.(['event' fname])] = destdata{:};
+                                    EEG.epoch = tmpepoch;
+                                end
                             end
+                        catch
+                            errordlg2(['Warning: minor problem encountered when generating' 10 ...
+                                'the EEG.epoch structure (used only in user scripts)']); return;
                         end
-                    catch
-                        errordlg2(['Warning: minor problem encountered when generating' 10 ...
-                            'the EEG.epoch structure (used only in user scripts)']); return;
                     end
                 case { 'loaddata' 'savedata' 'chanconsist' 'icaconsist' 'epochconsist' }, res = '';
                 otherwise, error('eeg_checkset: unknown option');
@@ -790,7 +791,7 @@ for inddataset = 1:length(ALLEEG)
     % data dimensions -------------------------
     if isnumeric(EEG.data) && ~isempty(EEG.data)
         if ~isequal(size(EEG.data,1), EEG.nbchan)
-            disp( [ 'eeg_checkset warning: number of columns in data (' int2str(size(EEG.data,1)) ...
+            disp( [ 'eeg_checkset warning: number of rows in data (' int2str(size(EEG.data,1)) ...
                 ') does not match the number of channels (' int2str(EEG.nbchan) '): corrected' ]);
             res = com;
             EEG.nbchan = size(EEG.data,1);
@@ -958,6 +959,8 @@ for inddataset = 1:length(ALLEEG)
         if ~isempty(EEG.icaweights)
             EEG.icachansind = [1:EEG.nbchan]; res = com;
         end
+    elseif ~isa(EEG.icachansind, 'double')
+        EEG.icachansind = double(EEG.icachansind); res = com;
     end
     if ~isempty(EEG.icasphere)
         if ~isempty(EEG.icaweights)
@@ -1027,6 +1030,24 @@ for inddataset = 1:length(ALLEEG)
                             EEG.icaact = (EEG.icaweights*EEG.icasphere)*EEG.data(EEG.icachansind,:); % automatically does single or double
                         end
                         EEG.icaact    = reshape( EEG.icaact, size(EEG.icaact,1), EEG.pnts, EEG.trials);
+                    end
+                end
+                if ~isempty(EEG.icaact)
+                    if EEG.trials*EEG.pnts < 1000
+                        tmpact = (EEG.icaweights * EEG.icasphere) * EEG.data(EEG.icachansind,:);
+                    else
+                        % special MATLAB calculation kicks in above 1000
+                        % (otherwise difference on the order of 0.0000001%)
+                        tmpact = (EEG.icaweights * EEG.icasphere) * EEG.data(EEG.icachansind,1:1000); 
+                    end
+                    if mean(abs(tmpact(:,1) - EEG.icaact(:,1))) > 0.000001
+                        backtraceState = warning('backtrace');
+                        warning('backtrace', 'off')
+                        warning('ICA activities and weights mismatch, click on the link below for more information', 'verbose')
+                        fprintf('<a href="https://eeglab.org/others/TIPS_and_FAQ.html#ica-activity-warning">https://eeglab.org/others/TIPS_and_FAQ.html#ica-activity-warning</a>\n')
+                        if isstruct(backtraceState)
+                            warning('backtrace', backtraceState.state);
+                        end
                     end
                 end
             end
@@ -1226,6 +1247,7 @@ for inddataset = 1:length(ALLEEG)
     % ---------
     if ~isfield(EEG, 'times') || isempty(EEG.times) || length(EEG.times) ~= EEG.pnts
         EEG.times = linspace(EEG.xmin*1000, EEG.xmax*1000, EEG.pnts);
+        EEG.saved = 'no';
     end
     
     if ~isfield(EEG, 'history'),    EEG.history    = ''; res = com; end

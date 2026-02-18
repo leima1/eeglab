@@ -122,8 +122,13 @@ function [chanlist,chanliststr, allchanstr] = pop_chansel(chans, varargin);
             end
         end
     end
-    [chanlist,tmp,chanliststr] = listdlg2('PromptString',strvcat('(use shift|Ctrl to', 'select several)'), ...
-                'ListString', tmpfieldnames, 'initialvalue', g.select, 'selectionmode', g.selectionmode);   
+    if strcmpi( g.selectionmode, 'single')
+        [chanlist,tmp,chanliststr] = listdlg2('PromptString', 'Select channel below', ...
+                    'ListString', tmpfieldnames, 'initialvalue', g.select, 'selectionmode', g.selectionmode);   
+    else
+        [chanlist,tmp,chanliststr] = listdlg2('PromptString',strvcat('(use shift|Ctrl to', 'select several)'), ...
+                    'ListString', tmpfieldnames, 'initialvalue', g.select, 'selectionmode', g.selectionmode);   
+    end
     if tmp == 0
         chanlist = [];
         chanliststr = '';

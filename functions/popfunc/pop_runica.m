@@ -110,12 +110,12 @@ end
 % -------------------------
 allalgs(1).name = 'runica';
 allalgs(1).description = 'Extended Infomax (runica.m; default)';
-allalgs(1).options     = '''extended'', 1, ''rndreset'', ''yes''';
+allalgs(1).options     = '''extended'', 1';
 allalgs(end+1).name = 'runica';
 allalgs(end).description = 'Robust Extended Infomax (runica.m; slow)';
-allalgs(end).options     = '''extended'', 1, ''lrate'', 1e-5, ''maxstep'', 2000';
+allalgs(end).options     = '''extended'', 1, ''lrate'', 1e-5, ''maxsteps'', 2000';
 allalgs(end).help        = 'See this <a href="https://sccn.ucsd.edu/wiki/Makoto%27s_useful_EEGLAB_code#How_to_obtain_practically_reproducible_ICA_results_.2809.2F26.2F2022_added.29">reference</a> for ICA conservative parameters ';
-allalgs(end+1).name = 'amica';
+allalgs(end+1).name = 'runamica15';
 allalgs(end).description = 'AMICA (slowest; best)';
 allalgs(end).options     = '''maxiter'', 2000';
 allalgs(end).help        = 'See this <a href="https://github.com/sccn/amica/wiki/AMICA">reference</a> for AMICA';
@@ -496,7 +496,9 @@ switch lower(g.icatype)
         if ~isequal(runicaCurrentLoc, runicaDesiredLoc)
             addpath(runicaDesiredLoc); % put back to the beginning of the path
         end
-        try if ismatlab, g.options = {  g.options{:}, 'interrupt', 'on' }; end; catch, end
+        try 
+            if ismatlab && nargin < 2, g.options = {  g.options{:}, 'interrupt', 'on' }; end
+        catch, end
         if tmprank == size(tmpdata,1) || pca_opt
             [EEG.icaweights,EEG.icasphere] = runica( tmpdata, 'lrate', 0.001,  g.options{:} );
         else 
@@ -534,7 +536,8 @@ switch lower(g.icatype)
             disp(['Data rank (' int2str(tmprank) ') is smaller than the number of channels (' int2str(size(tmpdata,1)) ').']);
             [EEG.icaweights,EEG.icasphere] = binica( tmpdata, 'lrate', 0.001, 'pca', tmprank, g.options{:} );
         end
-    case 'amica' 
+    case 'runamica15' 
+         fprintf(2, 'AMICA: we recommend you use the AMICA GUI instead of the standard ICA GUI.\n')
          if ~exist('pop_runamica')
              if nargin < 2
                  errordlg2('You must install the AMICA plugin first to use AMICA');

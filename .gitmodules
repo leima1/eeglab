@@ -13,3 +13,6 @@
 [submodule "plugins/firfilt"]
 	path = plugins/firfilt
 	url = https://github.com/sccn/firfilt
+[submodule "plugins/EEG-BIDS"]
+	path = plugins/EEG-BIDS
+	url = https://github.com/sccn/EEG-BIDS.git

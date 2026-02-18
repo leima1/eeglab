@@ -2,9 +2,9 @@
 %                 multiple t-test using matrix manipulation.
 %
 % Usage:
-%    >> [F df] = ttest2_cell( { a b } );
-%    >> [F df] = ttest2_cell(a, b);
-%    >> [F df] = ttest2_cell(a, b, 'inhomogenous');
+%    >> [T df] = ttest2_cell( { a b } );
+%    >> [T df] = ttest2_cell(a, b);
+%    >> [T df] = ttest2_cell(a, b, 'inhomogenous');
 %
 % Inputs:
 %   a,b       = data consisting of UNPAIRED arrays to be compared. The last 

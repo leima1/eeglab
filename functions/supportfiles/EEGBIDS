@@ -1,12 +1,8 @@
-#!/bin/bash
-cd "$(dirname "$0")" # this chdir to this script folder, usually not writable if not admin
-
 # Define the folder path
 echo 
-echo "***************************************************************************"
-echo "Please wait while EEGLAB is starting..."
-echo "See https://eeglab.org/others/Compiled_EEGLAB.html if you encounter issues"
-echo "***************************************************************************"
+echo "*****************************************"
+echo "Please wait while EEG-BIDS is starting..."
+echo "*****************************************"
 echo
 
 folder_path="/Applications/MATLAB/MATLAB_Runtime/R2022b/"
@@ -20,4 +16,4 @@ else
     echo "The folder $folder_path exists."
 fi
 
-"$script_dir/run_EEGLAB.sh" $folder_path
+"$script_dir/run_EEGLAB.sh" $folder_path "bids_exporter;"

@@ -94,7 +94,7 @@
 %   'pmask'           - values for masking topoplot. Array of zeros and 1 of the same size as the input 
 %                       value array {default: []}
 %   'color'           - color of the contours {default: dark grey}
-%   'whitebk '        -  ('on'|'off') make the background color white (e.g., to print empty plotgrid channels) 
+%   'whitebk'         -  ('on'|'off') make the background color white (e.g., to print empty plotgrid channels) 
 %                       {default: 'off'}
 %   'gridscale'       - [int > 32] size (nrows) of interpolated scalp map data matrix {default: 67}
 %   'colormap'        -  (n,3) any size colormap {default: existing colormap}
@@ -1007,6 +1007,12 @@ if ~strcmpi(STYLE,'blank') % if draw interpolated scalp map
   [yi,xi] = meshgrid(yi, xi);
   [Xi,Yi,Zi] = griddata(inty,intx,double(intValues),yi,xi,'v4'); % interpolate data
   [Xi,Yi,ZiC] = griddata(inty,intx,double(intContourVals),yi,xi,'v4'); % interpolate data
+
+  %[Xi,Yi,Zi] = griddata_octave(inty,intx,double(intValues),yi,xi); % interpolate data
+  %[Xi,Yi,ZiC] = griddata_octave(inty,intx,double(intContourVals),yi,xi); % interpolate data
+
+  %[Xi,Yi,Zi] = griddata_v4(inty,intx,double(intValues),yi,xi); % interpolate data
+  %[Xi,Yi,ZiC] = griddata_v4(inty,intx,double(intContourVals),yi,xi); % interpolate data
 
   %
   %%%%%%%%%%%%%%%%%%%%%%% Mask out data outside the head %%%%%%%%%%%%%%%%%%%%%

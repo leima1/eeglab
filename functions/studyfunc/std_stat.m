@@ -59,8 +59,8 @@
 %                 is selected. One element per group.
 %  pgroup       - [cell] group pvalues or mask (0 or 1). One element per 
 %                 condition.
-%  pinter       - [cell] three elements, condition pvalues (group pooled),
-%                 group pvalues (condition pooled) and interaction pvalues.
+%  pinter       - [cell] three elements, group pvalues (condition pooled),
+%                 condition pvalues (group pooled) and interaction pvalues.
 %  statcond     - [cell] condition statistic values (F or T).
 %  statgroup    - [cell] group pvalues or mask (0 or 1). One element per 
 %                 condition.

@@ -20,12 +20,12 @@
 %   Matlab scripts.  A single data structure ('EEG') containing all dataset 
 %   parameters may be accessed and modified directly from the Matlab commandline. 
 %   EEGLAB now recognizes "plugins," sets of EEGLAB functions linked to the EEGLAB
-%   main menu through an "eegplugin_[name].m" function (Ex. >> help eeplugin_besa.m). 
+%   main menu through an "eegplugin_[name].m" function (Ex. >> help eegplugin_besa.m).
 %
 % Usage: 1) To (re)start EEGLAB, type
 %            >> eeglab           % Ignores any loaded datasets
 %            >> eeglab nogui     % Do not pop up GUI
-%        2) To redaw and update the EEGLAB interface, type
+%        2) To redraw and update the EEGLAB interface, type
 %            >> eeglab redraw    % Scans for non-empty datasets
 %            >> eeglab rebuild   % Closes and rebuilds the EEGLAB window
 %            >> eeglab versions  % State EEGLAB version number
@@ -156,6 +156,9 @@ ver = version;
 if strcmpi(ver, '9.4.0.813654 (R2018a)')
     disp('Link to install <a href="https://www.mathworks.com/downloads/web_downloads/download_update?release=R2018a&s_tid=ebrg_R2018a_2_1757132">2018a Update 2</a>');
     errordlg( [ 'You are running Matlab version R2018a, which has important bugs' 10 'Matlab crashes when running EEGLAB in this version of Matlab' 10 'Install 2018a Update 2 to fix the issue (link on the command line)' ]);
+end
+if str2double(ver(1:2)) > 24
+    fprintf('Disable MATLAB Copilot in settings to hide "Explain Error" buttons\n')
 end
 
 if nargout > 0
@@ -334,6 +337,8 @@ if ~isdeployed
     myaddpath( eeglabpath, 'readeetraklocs.m', [ 'functions' filesep 'sigprocfunc'      ]);
     myaddpath( eeglabpath, 'supergui.m',       [ 'functions' filesep 'guifunc'          ]);
     myaddpath( eeglabpath, 'pop_study.m',      [ 'functions' filesep 'studyfunc'        ]);
+    myaddpath( eeglabpath, 'eeglab_data.set',  [ 'sample_data'      ]);
+    myaddpath( eeglabpath, 'mheadnew.mat',     [ 'functions' filesep 'supportfiles'     ]);
     myaddpath( eeglabpath, 'pop_loadbci.m',    [ 'functions' filesep 'popfunc'          ]);
     myaddpath( eeglabpath, 'statcond.m',       [ 'functions' filesep 'statistics'       ]);
     myaddpath( eeglabpath, 'timefreq.m',       [ 'functions' filesep 'timefreqfunc'     ]);
@@ -1101,6 +1106,13 @@ else
 
         % execute function
         % ----------------
+        if isempty(pluginVersion)
+            if ~isempty(findstr(lower(dircontent(index).name), 'fieldtrip')) || ~isempty(findstr(lower(dircontent(index).name), 'fileio'))
+                if isempty(pluginVersion)
+                    pluginVersion = 'ersion unknowned';
+                end
+            end
+        end
         if ~isempty(pluginVersion) || ~isempty(funcname)
             if isempty(funcname)
                 fprintf([ 'EEGLAB: adding "' pluginName '" v' pluginVersion ' to the path' ]);
@@ -1468,7 +1480,15 @@ set(titleh, 'fontsize', TEXT_FONTSIZE_L, 'fontweight', 'bold');
 set(alltexth, 'fontname', FONTNAME, 'fontsize', FONTSIZE);
 
 set(W_MAIN, 'visible', 'on');
-    
+if str2double(vers(1:2)) >= 22 && isequal(computer, 'PCWIN64')
+    F = getframe(W_MAIN);
+    if F.cdata(1) < 100
+        set(gcf, 'renderer', 'painters');
+        set(0, 'defaultfigurerenderer', 'painters')
+        fprintf(2, 'MATLAB renderer switched to painter to prevent darkening of figures\n')
+    end
+end
+
 return;
 
 % Update EEGLAB GUI (list of datasets)

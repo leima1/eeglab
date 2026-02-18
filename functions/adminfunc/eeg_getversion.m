@@ -41,8 +41,13 @@
 
 function [vers, versnum, releaseDate] = eeg_getversion()
 
+<<<<<<< HEAD
 vers        = '2024.2.1';
 releaseDate = '12-Nov-24 14:55:42'; % unix date -> date +"%d-%b-%y %T"
+=======
+vers        = '2026.0.0';
+releaseDate = '14-Feb-2026 14:55:42'; % unix date -> date +"%d-%b-%y %T"
+>>>>>>> upstream/develop
 
 % get numerical version number
 tmpvers = vers;

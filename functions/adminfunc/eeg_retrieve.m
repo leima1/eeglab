@@ -46,7 +46,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function [EEG, ALLEEG, CURRENTSET] = eeg_retrieve( ALLEEG, CURRENTSET);
+function [EEG, ALLEEG, CURRENTSET] = eeg_retrieve( ALLEEG, CURRENTSET)
 
 if nargin < 2
 	help eeg_retrieve;
@@ -64,16 +64,16 @@ end;
     end
 
     if length(CURRENTSET) > 1 && option_storedisk
-        [ EEG tmpcom ] = eeg_checkset(ALLEEG(CURRENTSET)); % do not load data if several datasets
+        [ EEG, ~ ] = eeg_checkset(ALLEEG(CURRENTSET)); % do not load data if several datasets
         if length(CURRENTSET) ~= length(ALLEEG)
-            [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+            [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
         else
             ALLEEG = EEG;
         end
     else
         if CURRENTSET ~= 0
-            [ EEG tmpcom ] = eeg_checkset(ALLEEG(CURRENTSET), 'loaddata');
-            [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+            [ EEG, ~ ] = eeg_checkset(ALLEEG(CURRENTSET), 'loaddata');
+            [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
         else
             EEG = eeg_emptyset; % empty dataset
             return;

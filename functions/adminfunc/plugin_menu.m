@@ -50,6 +50,10 @@ if isempty(plugin)
     return;
 end
 
+if ~isfield(plugin, 'downloads')
+    fprintf(2, 'Unknown issue with plugin, aborting\n')
+end
+
 % sort plugins by download score
 [~,scoreOrder] = sort([ plugin.downloads ], 2, 'descend');
 plugin = plugin(scoreOrder);
@@ -62,6 +66,11 @@ plugin = plugin(scoreOrder);
 % plugins to install
 % ------------------
 eeglab_options;
+matVers = version;
+matVers = str2double(matVers(1:3));
+if matVers >= 25
+    option_htmlingraphics = 0;
+end
 if option_htmlingraphics
     warning('GUI slow to pop up or showing <html> tags? Try disabling HTML graphics in the Preferences menu (first show advanced options).')
     search_icon_path = ['<html><img width=17 height=16 src="' 'file://' fullfile(fileparts(which('plugin_menu.m')),'search-icon.png') '"> &nbsp; Search</html>'];          

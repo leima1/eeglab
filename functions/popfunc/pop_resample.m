@@ -125,7 +125,7 @@ oldpnts  = EEG.pnts;
 
 % resample for multiple channels
 % -------------------------
-if isfield(EEG, 'event') && ~isempty(EEG.event) && isfield(EEG.event, 'type') && ischar(EEG.event(1).type)
+if isfield(EEG, 'event') && ~isempty(EEG.event) && isfield(EEG.event, 'type')
     tmpevent = EEG.event;
     bounds = eeg_findboundaries(tmpevent);
     if ~isempty(bounds)

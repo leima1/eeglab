@@ -113,8 +113,10 @@ if any(pwd == ' ')
 end
 
 icadefs % import ICABINARY and SC
-eeglab_p = fileparts(which('eeglab'));
-ICABINARY = fullfile(eeglab_p, 'functions', 'supportfiles', ICABINARY); % done here and not icadefs because slow
+if ~contains(ICABINARY, 'eeglab')
+    eeglab_p = fileparts(which('eeglab'));
+    ICABINARY = fullfile(eeglab_p, 'functions', 'supportfiles', ICABINARY); % done here and not icadefs because slow
+end
 
 if ~exist('SC')
   fprintf('binica(): You need to update your icadefs file to include ICABINARY and SC.\n')

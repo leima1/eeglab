@@ -131,6 +131,11 @@ if nargin < 2
    geometry = { [1 1 1] [1 1 0.25 0.23 0.51] [1 1 0.25 0.23 0.51] [1 1 0.25 0.23 0.51] [1 1 0.25 0.23 0.51] ...
            [1 1 0.25 0.23 0.51] [1] [1 1 1]};
    enabletype = ~isempty(EEG(1).chanlocs) && isfield(EEG(1).chanlocs, 'type') && ~isempty(EEG(1).chanlocs(1).type);
+   if isequal(inputname(1), 'EEG')
+       enableScroll = 'on';
+   else
+       enableScroll = 'off';
+   end
    uilist = { ...
          { 'Style', 'text', 'string', 'Select data in:', 'fontweight', 'bold'  }, ...
          { 'Style', 'text', 'string', 'Input desired range', 'fontweight', 'bold'  }, ...
@@ -159,7 +164,7 @@ if nargin < 2
          { 'style' 'pushbutton' 'string'  '...', 'enable' fastif(enabletype, 'on', 'off') ...
            'callback'  'pop_chansel(get(gcbf, ''userdata''), ''field'', ''type'',   ''handle'', findobj(''parent'', gcbf, ''tag'', ''chantype''));' }, ...
          ...
-           { }, { }, { 'Style', 'pushbutton', 'string', 'Scroll dataset', 'enable', fastif(length(EEG)>1, 'off', 'on'), 'callback', ...
+           { }, { }, { 'Style', 'pushbutton', 'string', 'Scroll dataset', 'enable', fastif(length(EEG)>1, 'off', 'on'), 'enable', enableScroll, 'callback', ...
                           'eegplot(EEG.data, ''srate'', EEG.srate, ''winlength'', 5, ''limits'', [EEG.xmin EEG.xmax]*1000, ''position'', [100 300 800 500], ''xgrid'', ''off'', ''eloc_file'', EEG.chanlocs);' } {}};
 %           'callback' 'tmplabels = get(gcbf, ''userdata''); [~, tmpvalchan] = pop_chansel(tmplabels, ''withindex'', ''on''); set(findobj(gcbf, ''tag'', ''chans''), ''string'',tmpvalchan); clear tmplabels tmpvalchan' }, ...
    chanlocs = eeg_mergelocs(EEG.chanlocs);
@@ -613,7 +618,25 @@ if ~isequal(g.channel,1:size(EEG.data,1)) || ~isequal(g.trial,1:size(EEG.data,3)
             EEG.data(:, :, diff2) = [];
         end
     else
-        EEG.data  = EEG.data(g.channel, :, g.trial);
+        % Check if data is on disk ('in set file' string from STUDY mode)
+        if ischar(EEG.data)
+            % Data is on disk, load it first
+            EEG = eeg_checkset(EEG, 'loaddata');
+        end
+
+        % Ensure g.channel indices are valid for actual data size
+        actual_nchans = size(EEG.data, 1);
+        valid_channels = g.channel(g.channel <= actual_nchans);
+        if length(valid_channels) ~= length(g.channel)
+            warning('pop_select: %d requested channel indices exceed data size (%d channels)', ...
+                    length(g.channel) - length(valid_channels), actual_nchans);
+            warning('Keeping only %d valid channels', length(valid_channels));
+            % Clear icaact since ICA matrices will be modified
+            EEG.icaact = [];
+        end
+        EEG.data  = EEG.data(valid_channels, :, g.trial);
+        % Update g.channel to match actual channels used (needed for line 652)
+        g.channel = valid_channels;
     end
 end
 if ~isempty(EEG.icaact), EEG.icaact = EEG.icaact(:,:,g.trial); end

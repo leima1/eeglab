@@ -102,6 +102,8 @@
 %                   limits to display spectrum. (Data should contain spectral values).
 %                   *** This option must be used ALWAYS with 'freqs' ***  
 %    'winlength'  - [value] Seconds (or epochs) of data to display in window {default: 5}
+%    'time'         [value in second] Time to plot. Default is the
+%                   beginning of the data. 
 %    'dispchans'  - [integer] Number of channels to display in the activity window 
 %                   {default: from data}.  If < total number of channels, a vertical  
 %                   slider on the left side of the figure allows vertical data scrolling. 
@@ -1235,11 +1237,20 @@ u(22) = uicontrol('Parent',figh, ...
   set(h, 'backgroundcolor', BUTTON_COLOR);
   h = findobj(gcf, 'tag', 'eegslider');
   set(h, 'backgroundcolor', BUTTON_COLOR);
+
+  if ismatlab
+      ver = version;
+      if str2double(ver(1:2)) > 24
+          set(findall(figh, '-property', 'FontSize'), 'FontSize', 10)
+      end
+  end
+  
   set(figh, 'visible', 'on');
   
   if strcmpi(g.noui, 'on')
       eegplot('noui');
   end
+  
   
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % End Main Function
@@ -1544,7 +1555,7 @@ else
         for index = 1:length(event2plot)
             %Just repeat for the first one
             if index == 1
-                EVENTFONT = ' \fontsize{10} ';
+                EVENTFONT = '  ';
             end
             
             % draw latency line
@@ -1562,6 +1573,7 @@ else
             if length(evntxt)>MAXEVENTSTRING, evntxt = [ evntxt(1:MAXEVENTSTRING-1) '...' ]; end % truncate
             try, 
                 tmph2 = text(ax0, [tmplat], ylims(2)-0.005, [EVENTFONT evntxt], ...
+				    'fontsize', 10, ...
                                     'color', g.eventcolors{ event2plot(index) }, ...
                                     'horizontalalignment', 'left',...
                                     'rotation',90);

@@ -181,9 +181,9 @@ if ischar(g), error(g); end
 
 % setting more defaults
 % ---------------------
-if length(times) ~= size(tfdata,2)
-   fprintf('tftopo(): tfdata columns must be a multiple of the length of times (%d)\n',...
-                 length(times));
+if mod(size(tfdata,2),length(times)) ~= 0
+   fprintf('tftopo(): tfdata columns must be a multiple of the length of times (%d vs %d)\n',...
+                    size(tfdata,2), length(times));
    return
 end
 if length(g.showchan) > 1

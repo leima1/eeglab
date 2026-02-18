@@ -12,6 +12,10 @@
 %          2) [X Y Z ...]: re-reference to the average of channel X Y Z ... 
 % 
 % Optional inputs:
+%   'huber'      - ['float'] If not NaN, use the Huber average reference
+%                  instead of the standard average reference. See EEGLAB
+%                  tutorial section 5.b for more information. This
+%                  threshold is given in microvolt.
 %   'exclude'    - [integer array] channel indices to exclude from re-referencing
 %                  (e.g., event marker channels, etc.)
 %   'keepref'    - ['on'|'off'] keep reference channel in output (only usable 
@@ -120,6 +124,8 @@ g = finputcheck(varargin, { 'icaweight'   'real'    []          [];
                             'icasphere'   'real'    []          [];
                             'icachansind' 'integer'    []       [];
                             'interpchan'  {''}      []          [];
+                            'refica'      {''}      []          [];
+                            'huber'       'float' []          NaN;
                             'method'     'string'  { 'standard','withref' }  'standard';
                             'refstate', {'string', 'integer'}, {{'common', 'averef'}, [1 size(data,1)]}, 'common';
                             'exclude',  'integer', [1 size(data,1)], [];
@@ -186,27 +192,46 @@ end
 
 % generate rereferencing matrix
 % -----------------------------
-if 0 % alternate code - should work exactly the same
-    if isempty(ref)
-        ref=chansin; % average reference
-    end % if 
+if ~isnan(g.huber) && isempty(ref)
     chansout=chansin; 
-    data(chansout,:)=data(chansout,:)-ones(nchansin,1)*mean(data(ref,:),1); 
-else
-    if ~isempty(ref) % not average reference   
-        refmatrix = eye(nchansin); % begin with identity matrix
-        tmpref = ref;
-        for index = length(g.exclude):-1:1
-            tmpref(find(g.exclude(index) < tmpref)) = tmpref(find(g.exclude(index) < tmpref))-1;
+    [data(chansout,:),~,w] = huber_mean(data(chansout,:), g.huber); 
+    if ~all(w == 1)
+        if ~isempty(g.elocs)
+            fprintf('List of channels not weighted 1 by the huber average reference:\n')
+            for iChan = 1:length(chansout)
+                if w(iChan) < 1
+                    fprintf('Channel %s: %1.2f\n', g.elocs(iChan).labels, w(iChan));
+                end
+            end
+        else
+            fprintf('Some channels not weighted 1 by the huber average reference\n')
         end
-        for index = 1:length(tmpref)
-            refmatrix(:,tmpref(index)) = refmatrix(:,tmpref(index))-1/length(tmpref);
-        end
-    else % compute average reference
-        refmatrix = eye(nchansin)-ones(nchansin)*1/nchansin;
+    else
+        fprintf('All channels weighted 1 by the huber average reference (not outlier detected; same as average reference)\n')
     end
-    chansout = chansin;
-    data(chansout,:) = refmatrix*data(chansin,:);
+else
+    if 0 % alternate code - should work exactly the same
+        if isempty(ref)
+            ref=chansin; % average reference
+        end % if 
+        chansout=chansin; 
+        data(chansout,:)=data(chansout,:)-ones(nchansin,1)*mean(data(ref,:),1); 
+    else
+        if ~isempty(ref) % not average reference   
+            refmatrix = eye(nchansin); % begin with identity matrix
+            tmpref = ref;
+            for index = length(g.exclude):-1:1
+                tmpref(find(g.exclude(index) < tmpref)) = tmpref(find(g.exclude(index) < tmpref))-1;
+            end
+            for index = 1:length(tmpref)
+                refmatrix(:,tmpref(index)) = refmatrix(:,tmpref(index))-1/length(tmpref);
+            end
+        else % compute average reference
+            refmatrix = eye(nchansin)-ones(nchansin)*1/nchansin;
+        end
+        chansout = chansin;
+        data(chansout,:) = refmatrix*data(chansin,:);
+    end
 end
 
 % change reference in elocs structure
@@ -249,3 +274,48 @@ if ~isempty(g.icaweights)
     disp('Warning: This function does not process ICA array anymore, use the pop_reref function instead');
 end
 Elocs = g.elocs;
+
+% Huber Mean Estimator
+%
+% m = huber_mean(x, delta, tol, max_iter)
+%
+% x       : Input data vector.
+% delta   : Threshold parameter (tuning constant).
+% tol     : Tolerance for convergence (default: 1e-6).
+% max_iter: Maximum number of iterations (default: 100).
+%
+% Returns the robust Huber mean of x.
+
+function [x,m,w] = huber_mean(x, delta, tol, max_iter)
+    
+    if nargin < 2 || isempty(delta)
+        delta = 25.0; % Default threshold if not provided in microvolts
+    end
+    if nargin < 3 || isempty(tol)
+        tol = 1e-6;
+    end
+    if nargin < 4 || isempty(max_iter)
+        max_iter = 100;
+    end
+
+    % Initial estimate using the arithmetic mean
+    m = mean(x);
+
+    for iter = 1:max_iter
+        r = mean(bsxfun(@minus, x, m),2);   % Residuals
+        w = ones(size(x,1),1);      % Default weights
+        
+        % Update weights for large residuals
+        idx = abs(r) > delta;
+        w(idx) = delta ./ abs(r(idx));
+        % Compute the weighted mean
+        m_new = sum(bsxfun(@times, w, x))/ sum(w);
+        
+        % Check convergence
+        if abs(m_new - m) < tol
+            break;
+        end
+        
+        m = m_new;
+    end
+    x = bsxfun(@minus, x, m);

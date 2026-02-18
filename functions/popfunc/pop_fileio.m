@@ -298,6 +298,15 @@ if isfield(dat, 'label') && ~isempty(dat.label)
                 end
             end
         end
+        if isfield(dat, 'label')
+            for iChan = 1:length(dat.label)
+                if isfield(dat, 'chantype')
+                    EEG.chanlocs(iChan).type = dat.chantype{iChan};
+                elseif isfield(dat,'elec') && isfield(dat.elec, 'chantype')
+                    EEG.chanlocs(iChan).type = dat.elec.chantype{iChan};
+                end
+            end
+        end
         if isfield(dat.elec, 'unit')
             EEG.chaninfo.unit = dat.elec.unit;
         end
